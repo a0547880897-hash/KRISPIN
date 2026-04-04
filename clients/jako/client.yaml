@@ -1,0 +1,35 @@
+# Example client reference file.
+# Copy this file to `clients/<your_client>/client.yaml` and edit it per advertiser.
+# Only `client` and `brand_text` are required — everything else is optional but
+# improves detection robustness.
+
+client: JAKO
+
+brand_text:
+  - "JAKO"
+  - "עכשיו בישראל"
+  - "עכשיו בישראל!"
+
+brand_colors:
+  - "#FF6A13"   # dominant orange
+  - "#FFFFFF"   # white text
+
+# Optional: PNG of the logo (transparent bg is fine)
+# logo_image: logo.png
+
+# Optional: 1+ reference frames from the ad as shown on the LED board.
+# Even a single frame works — more frames = more robust matching.
+# creative_frames:
+#   - ref_01.png
+#   - ref_02.png
+
+# Optional: the full ad video as delivered to the broadcaster.
+# creative_video: ad.mp4
+
+# Optional: bounding box of the most prominent element within the reference
+# image (normalised 0..1). Narrows the matching focus to what matters most.
+# key_visual_region:
+#   x: 0.35
+#   y: 0.20
+#   w: 0.30
+#   h: 0.60

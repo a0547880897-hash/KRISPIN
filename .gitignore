@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Match inputs / outputs (heavy, don't commit)
+*.mp4
+*.mov
+*.mkv
+output/*
+!output/.gitkeep
+
+# Model caches
+.cache/
+.torch/
+~/.cache/
+
+# Streamlit
+.streamlit/
+
+# macOS / Linux junk
+*.log
+*.tmp
