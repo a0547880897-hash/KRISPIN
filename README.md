@@ -2,36 +2,21 @@
 
 אפליקציית ווב פשוטה: מדביקים לינק של סרטון יוטיוב → מורידים אותו למחשב באיכות המקסימלית.
 
-מבוסס על **yt-dlp** (מוריד) + **ffmpeg** (ממזג וידאו ואודיו), עם backend ב-FastAPI ו-frontend בעברית.
+## הדרך הכי פשוטה (ללא ידע טכני)
 
-## דרישות
+צריך רק **Python** מותקן (פעם אחת). אם אין — מורידים מ-https://www.python.org/downloads/
+(בחלונות חשוב לסמן בהתקנה "Add Python to PATH").
 
-- Python 3.9+
-- **ffmpeg** (חובה — בלעדיו אי אפשר למזג את האיכויות הגבוהות של יוטיוב):
-  - Ubuntu/Debian: `sudo apt install -y ffmpeg`
-  - macOS: `brew install ffmpeg`
-  - Windows: `winget install Gyan.FFmpeg`
+אחר כך:
 
-## הרצה
+- **Windows:** לחיצה כפולה על `start.bat`
+- **macOS:** לחיצה כפולה על `start.command`
+- **Linux:** מריצים `./run.sh`
 
-```bash
-./run.sh
-```
+זהו. בפעם הראשונה זה מתקין הכל לבד (כולל ffmpeg, אוטומטית), ואז הדפדפן נפתח על
+`http://127.0.0.1:8000`. בכל פעם הבאה זה פשוט נפתח מיד.
 
-הסקריפט יוצר סביבה וירטואלית, מתקין תלויות ומריץ את השרת. אחר כך פותחים בדפדפן:
-
-```
-http://127.0.0.1:8000
-```
-
-### הרצה ידנית (חלופה)
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app:app --host 127.0.0.1 --port 8000
-```
+> אין צורך להתקין ffmpeg ידנית — הוא מגיע אוטומטית עם ההתקנה.
 
 ## שימוש
 
@@ -41,16 +26,19 @@ uvicorn app:app --host 127.0.0.1 --port 8000
 
 ## איך זה עובד
 
-יוטיוב מגיש באיכויות הגבוהות (1080p/4K) את הווידאו והאודיו כשני זרמים נפרדים.
-האפליקציה מורידה את שני הזרמים הטובים ביותר (`bv*+ba/b`) וממזגת אותם ל-MP4 יחיד עם ffmpeg.
+מבוסס על **yt-dlp** (מוריד) + **ffmpeg** (ממזג), עם backend ב-FastAPI ו-frontend בעברית.
+יוטיוב מגיש באיכויות הגבוהות (1080p/4K) את הווידאו והאודיו כשני זרמים נפרדים;
+האפליקציה מורידה את שניהם (`bv*+ba/b`) וממזגת ל-MP4 יחיד.
 
 ## מבנה
 
 ```
 app.py             # שרת FastAPI שעוטף את yt-dlp
 static/index.html  # הממשק (עברית, RTL)
-requirements.txt   # תלויות Python
-run.sh             # התקנה והרצה בפקודה אחת
+requirements.txt   # תלויות Python (כולל ffmpeg דרך imageio-ffmpeg)
+start.bat          # הפעלה בלחיצה כפולה — Windows
+start.command      # הפעלה בלחיצה כפולה — macOS
+run.sh             # הפעלה — Linux
 ```
 
 ## הערה משפטית

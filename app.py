@@ -1,3 +1,4 @@
+import shutil
 import threading
 import uuid
 import time
@@ -12,6 +13,21 @@ BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 DOWNLOAD_DIR = BASE_DIR / "downloads"
 DOWNLOAD_DIR.mkdir(exist_ok=True)
+
+
+def resolve_ffmpeg():
+    """מעדיף ffmpeg מערכתי; אם אין — נופל ל-ffmpeg המצורף דרך pip (imageio-ffmpeg)."""
+    if shutil.which("ffmpeg"):
+        return None  # קיים ב-PATH, yt-dlp ימצא אותו לבד
+    try:
+        import imageio_ffmpeg
+
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+FFMPEG_LOCATION = resolve_ffmpeg()
 
 app = FastAPI(title="YouTube Downloader")
 
@@ -118,6 +134,8 @@ def run_download(job_id: str, url: str, quality: str, mode: str):
         "postprocessor_hooks": [postprocessor_hook],
         "merge_output_format": "mp4",
     }
+    if FFMPEG_LOCATION:
+        opts["ffmpeg_location"] = FFMPEG_LOCATION
     if mode == "audio":
         opts.pop("merge_output_format", None)
         opts["postprocessors"] = [
@@ -217,6 +235,10 @@ def index():
 
 
 if __name__ == "__main__":
+    import webbrowser
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    HOST, PORT = "127.0.0.1", 8000
+    threading.Timer(1.5, lambda: webbrowser.open(f"http://{HOST}:{PORT}")).start()
+    print(f"\n  פתח בדפדפן:  http://{HOST}:{PORT}\n  לעצירה: Ctrl+C\n")
+    uvicorn.run(app, host=HOST, port=PORT)
