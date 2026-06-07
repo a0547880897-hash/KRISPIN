@@ -116,11 +116,35 @@ def suggest_pcn_input(exp, supplier_name, currency):
     return "תשומות שוטפות", YELLOW
 
 
+HEB_MONTHS = {1:"ינו",2:"פבר",3:"מרץ",4:"אפר",5:"מאי",6:"יוני",7:"יולי",8:"אוג",9:"ספט",10:"אוק",11:"נוב",12:"דצמ"}
+
+def bimonthly(date_str):
+    """Bi-monthly VAT reporting period from a document date string."""
+    if not date_str:
+        return ""
+    m = re.search(r'(\d{4})-(\d{2})-(\d{2})', str(date_str))
+    if not m:
+        return ""
+    y, mo = int(m.group(1)), int(m.group(2))
+    start = mo if mo % 2 == 1 else mo - 1   # odd month starts the pair
+    return f"{start:02d}-{start+1:02d}/{y}"
+
+def pcn_code(currency, vat, amount):
+    """Suggested PCN874 input record class."""
+    has_vat = isinstance(vat, (int, float)) and vat and vat > 0
+    if currency and currency != "ILS":
+        return "R / חו\"ל — בד\"כ ללא מע\"מ ישראלי"
+    if has_vat:
+        return "T — תשומה שוטפת (מע\"מ)"
+    return "ללא מע\"מ — לא נכלל בתשומות"
+
+
 COLUMNS = [
     "#index", "שם ספק", "מספר עוסק / ח.פ.", "סוג מסמך", "מספר מסמך", "תאריך המסמך",
     "תקופת דיווח", "סכום לפני מע\"מ", "סך הכל מע\"מ", "סכום כולל מע\"מ",
-    "מטבע", "שולם באמצעות", "מספר הקצאה", "סיווג תשומה (PCN874)",
-    "שם הקובץ", "קישור ב-Drive", "draft_id", "רמת ודאות כללית", "הערות",
+    "מטבע", "שולם באמצעות", "מספר הקצאה",
+    "סוג הוצאה (מורנינג)", "סוג הוצאה (מוצע)", "סיווג PCN874",
+    "שם הקובץ", "draft_id", "רמת ודאות כללית", "הערות",
 ]
 # which columns get per-cell colouring -> (col_index, value_key)
 COLOR_COLS = {
@@ -174,7 +198,6 @@ def main():
             round(amount - vat, 2) if isinstance(amount, (int, float)) and isinstance(vat, (int, float)) else None)
         doc_code = exp.get("documentType") or pm.get("document_type", (None,))[0]
         pay_code = exp.get("paymentType", pm.get("payment_type", (None,))[0])
-        period = d.get("reportingPeriod") or exp.get("reportingDate", "")
 
         values = {
             "supplier": sup.get("name", ""),
@@ -202,7 +225,9 @@ def main():
         if "cls" in ov:
             pcn, pcn_fill = ov["cls"], YELLOW
 
-        drive_link = f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}"
+        period = bimonthly(values["date"])
+        morning_et = (exp.get("accountingClassification") or {}).get("title", "")
+        pcncode = pcn_code(currency, values["vat"], values["amount"])
 
         row_vals = {
             "#index": i, "שם ספק": values["supplier"], "מספר עוסק / ח.פ.": values["taxId"],
@@ -211,19 +236,19 @@ def main():
             "סכום לפני מע\"מ": values["net"], "סך הכל מע\"מ": values["vat"],
             "סכום כולל מע\"מ": values["amount"], "מטבע": currency,
             "שולם באמצעות": values["payment_type"], "מספר הקצאה": values["assignment_number"],
-            "סיווג תשומה (PCN874)": pcn, "שם הקובץ": fname,
-            "קישור ב-Drive": drive_link, "draft_id": did, "רמת ודאות כללית": "",
-            "הערות": "",
+            "סוג הוצאה (מורנינג)": morning_et, "סוג הוצאה (מוצע)": pcn,
+            "סיווג PCN874": pcncode, "שם הקובץ": fname,
+            "draft_id": did, "רמת ודאות כללית": "", "הערות": "",
         }
 
         notes = []
         if not fname:
             notes.append("אין קובץ מצורף")
-        if not has_text and fname:
+        if not has_text and fname and not ov:
             notes.append("מסמך סרוק (אין שכבת טקסט) — אימות ויזואלי מומלץ")
         if currency and currency != "ILS":
             notes.append("מטבע חוץ — לבדוק מע\"מ תשומות")
-        if ov:
+        if "amt" in ov:
             notes.append("נקרא ויזואלית (סריקה ידנית מעמיקה)")
         if ov_note:
             notes.append(ov_note)
@@ -249,8 +274,11 @@ def main():
                 if fill is GREEN: stats["green"] += 1
                 elif fill is YELLOW: stats["yellow"] += 1
                 else: stats["red"] += 1
-            elif name == "סיווג תשומה (PCN874)":
+            elif name == "סוג הוצאה (מוצע)":
                 cell.fill = pcn_fill
+            elif name == "שם הקובץ" and fname:
+                cell.hyperlink = "documents/" + fname
+                cell.font = Font(color="0563C1", underline="single")
 
         # overall confidence (manual override wins)
         overall = ws.cell(r, COLUMNS.index("רמת ודאות כללית") + 1)
@@ -268,7 +296,7 @@ def main():
         r += 1
 
     # column widths
-    widths = [7, 26, 16, 22, 14, 14, 11, 13, 11, 13, 8, 16, 14, 26, 30, 14, 38, 14, 34]
+    widths = [7, 26, 16, 22, 15, 13, 13, 12, 11, 12, 7, 18, 14, 20, 30, 26, 34, 16, 14, 40]
     for c, w in enumerate(widths, 1):
         ws.column_dimensions[get_column_letter(c)].width = w
 
