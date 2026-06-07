@@ -24,7 +24,14 @@ from openpyxl.utils import get_column_letter
 RAW_JSON = "catalog_raw.json"
 DOCS_DIR = "documents"
 OUT_XLSX = "catalog.xlsx"
+OVERRIDES_JSON = "manual_overrides.json"
 DRIVE_FOLDER_ID = "15PhIp59cLThaX715AMtgincHebBCNbyC"
+
+# Manual verified overrides (from deep visual reading). Maps short keys -> value column.
+OV_KEYMAP = {"sup": "supplier", "tax": "taxId", "dtype": "document_type", "num": "number",
+             "date": "date", "net": "net", "vat": "vat", "amt": "amount", "cur": "currency",
+             "pay": "payment_type", "alloc": "assignment_number"}
+CONF_FILL = {"high": "GREEN", "medium": "YELLOW", "low": "RED"}
 
 GREEN = PatternFill("solid", fgColor="C6EFCE")
 YELLOW = PatternFill("solid", fgColor="FFEB9C")
@@ -128,6 +135,10 @@ CRITICAL = {"amount", "number", "date", "supplier"}
 def main():
     raw = json.load(open(RAW_JSON, encoding="utf-8"))
     files = {f.split("_")[1]: f for f in os.listdir(DOCS_DIR)} if os.path.isdir(DOCS_DIR) else {}
+    overrides = {}
+    if os.path.exists(OVERRIDES_JSON):
+        overrides = {k: v for k, v in json.load(open(OVERRIDES_JSON, encoding="utf-8")).items()
+                     if not k.startswith("_")}
 
     wb = Workbook()
     ws = wb.active
@@ -176,6 +187,21 @@ def main():
             "assignment_number": pm.get("assignment_number", (None,))[0] or "",
         }
         pcn, pcn_fill = suggest_pcn_input(exp, sup.get("name", ""), currency)
+
+        # Apply manual verified overrides (deep visual reading) for this draft.
+        ov = overrides.get(did, {})
+        forced_conf = {}   # value-key -> "high"/"medium"/"low"
+        ov_note = ov.get("note")
+        ov_overall = ov.get("ov")
+        for sk, vkey in OV_KEYMAP.items():
+            if sk in ov:
+                values[vkey] = ov[sk][0]
+                forced_conf[vkey] = ov[sk][1]
+        if "cur" in ov:
+            currency = ov["cur"][0]
+        if "cls" in ov:
+            pcn, pcn_fill = ov["cls"], YELLOW
+
         drive_link = f"https://drive.google.com/drive/folders/{DRIVE_FOLDER_ID}"
 
         row_vals = {
@@ -197,7 +223,12 @@ def main():
             notes.append("מסמך סרוק (אין שכבת טקסט) — אימות ויזואלי מומלץ")
         if currency and currency != "ILS":
             notes.append("מטבע חוץ — לבדוק מע\"מ תשומות")
+        if ov:
+            notes.append("נקרא ויזואלית (סריקה ידנית מעמיקה)")
+        if ov_note:
+            notes.append(ov_note)
 
+        fill_by_name = {"GREEN": GREEN, "YELLOW": YELLOW, "RED": RED}
         crit_reds = 0
         for c, name in enumerate(COLUMNS, 1):
             cell = ws.cell(r, c, row_vals[name])
@@ -206,9 +237,12 @@ def main():
             key = COLOR_COLS.get(name)
             if key:
                 val = values[key]
-                ocr_conf = pm.get(key, (None, None))[1]
-                verified = found_in_text(val, text) if has_text else False
-                fill, why = conf_color(val, ocr_conf, verified, has_text)
+                if key in forced_conf:   # manually verified value
+                    fill = fill_by_name[CONF_FILL[forced_conf[key]]]
+                else:
+                    ocr_conf = pm.get(key, (None, None))[1]
+                    verified = found_in_text(val, text) if has_text else False
+                    fill, _ = conf_color(val, ocr_conf, verified, has_text)
                 cell.fill = fill
                 if fill is RED and key in CRITICAL:
                     crit_reds += 1
@@ -218,9 +252,13 @@ def main():
             elif name == "סיווג תשומה (PCN874)":
                 cell.fill = pcn_fill
 
-        # overall confidence
+        # overall confidence (manual override wins)
         overall = ws.cell(r, COLUMNS.index("רמת ודאות כללית") + 1)
-        if crit_reds == 0:
+        if ov_overall:
+            lbl = {"high": ("גבוהה", GREEN), "medium": ("בינונית", YELLOW),
+                   "low": ("נמוכה — לבדיקה", RED)}[ov_overall]
+            overall.value, overall.fill = lbl
+        elif crit_reds == 0:
             overall.value, overall.fill = "גבוהה", GREEN
         elif crit_reds == 1:
             overall.value, overall.fill = "בינונית", YELLOW

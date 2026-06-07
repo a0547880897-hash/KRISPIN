@@ -13,6 +13,7 @@ catalog.json
 catalog_raw.json
 index.csv
 *.csv
+manual_overrides.json
 *.log
 
 # Python
