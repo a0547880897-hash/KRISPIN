@@ -1,145 +1,104 @@
-"""Task 2: independent re-scan of the 304 approved expenses -> catalog_expenses_approved.xlsx
-+ a discrepancy report (my reading vs Morning's captured data).
+"""Task 2 builder: catalog_expenses_FINAL.xlsx from MY independent scan.
 
-The xlsx holds MY scan (correct values). Manual corrections live in
-expenses_overrides.json (same shape as manual_overrides.json). The discrepancy
-report (printed) lists ONLY where Morning differs from the document on
-amount / vat / document-category.
+Reads expenses_scan.json (my per-document extraction) + index_expenses.csv.
+Organised by month. Independent scan (no Morning comparison in the sheet).
+Cells coloured by my confidence. Doubts flagged. Per-row hyperlink to source.
 """
-import os, re, json
-import fitz
+import os, csv, json
+from collections import defaultdict
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-RAW = "expenses_raw.json"; DOCS = "documents_expenses"; OUT = "catalog_expenses_approved.xlsx"
-OVERRIDES = "expenses_overrides.json"
-GREEN=PatternFill("solid",fgColor="C6EFCE"); YELLOW=PatternFill("solid",fgColor="FFEB9C")
-RED=PatternFill("solid",fgColor="FFC7CE"); HDR=PatternFill("solid",fgColor="305496")
-THIN=Border(*[Side(style="thin",color="D9D9D9")]*4)
+SCAN = "expenses_scan.json"; INDEX = "index_expenses.csv"
+DOCS = "documents_expenses"; OUT = "catalog_expenses_FINAL.xlsx"
+GREEN = PatternFill("solid", fgColor="C6EFCE"); YELLOW = PatternFill("solid", fgColor="FFEB9C")
+RED = PatternFill("solid", fgColor="FFC7CE"); HDR = PatternFill("solid", fgColor="305496")
+SUB = PatternFill("solid", fgColor="DDEBF7"); THIN = Border(*[Side(style="thin", color="D9D9D9")] * 4)
+CF = {"high": GREEN, "medium": YELLOW, "low": RED}
+HEBMON = {"01": "ינואר", "02": "פברואר", "03": "מרץ", "04": "אפריל", "05": "מאי", "06": "יוני",
+          "07": "יולי", "08": "אוגוסט", "09": "ספטמבר", "10": "אוקטובר", "11": "נובמבר", "12": "דצמבר"}
+COLS = ["#", "תאריך", "שם ספק", "ע.מ/ח.פ", "סוג מסמך", "מס' מסמך", "לפני מע\"מ", "מע\"מ",
+        "כולל מע\"מ", "מטבע", "שולם", "סוג הוצאה", "סיווג PCN874", "ודאות", "שאלה/ספק לליבון", "קובץ", "expense_id"]
 
-DOC_TYPES={305:"חשבונית מס",320:"חשבונית מס/קבלה",400:"קבלה",330:"חשבון עסקה",
-           405:"קבלה (זיכוי/תרומה)",20:"מסמך הוצאה",10:"הצעת מחיר"}
-PAY={1:"מזומן",2:"צ'ק",3:"כרטיס אשראי",4:"העברה בנקאית",5:"PayPal",0:"לא צויין",10:"אפליקציה"}
-HEBM={1:"ינו",2:"פבר",3:"מרץ",4:"אפר",5:"מאי",6:"יוני",7:"יולי",8:"אוג",9:"ספט",10:"אוק",11:"נוב",12:"דצמ"}
 
-def bimonthly(s):
-    m=re.search(r'(\d{4})-(\d{2})',str(s or ""))
-    if not m: return ""
-    y,mo=int(m.group(1)),int(m.group(2)); st=mo if mo%2 else mo-1
-    return f"{st:02d}-{st+1:02d}/{y}"
+def fnum(v):
+    try: return float(v)
+    except Exception: return 0
 
-def gettext(p):
-    if not p.lower().endswith(".pdf"): return ""
-    try: return "\n".join(pg.get_text() for pg in fitz.open(p))
-    except: return ""
-
-def norm(s): return re.sub(r'[\s,]','',str(s)).lower()
-def in_text(v,nt):
-    if v in (None,'',0): return None
-    if norm(v) in nt: return True
-    dg=re.findall(r'\d+',str(v))
-    if dg and len(dg[0])>=2 and dg[0] in nt: return True
-    try:
-        f=float(v)
-        for c in {str(f),(str(int(f)) if f==int(f) else ''),f"{f:.2f}"}:
-            if c and norm(c) in nt: return True
-    except: pass
-    return False
-
-def doctype_from_text(t):
-    if re.search(r'חשבונית\s*מס\s*[/\\]?\s*קבלה',t) or 'חשבונית מס קבלה' in t: return "חשבונית מס/קבלה"
-    if 'חשבון עסקה' in t or 'חשבונית עסקה' in t: return "חשבון עסקה"
-    if 'חשבונית מס' in t: return "חשבונית מס"
-    if re.search(r'\bקבלה\b',t): return "קבלה"
-    return ""
-
-COLUMNS=["#index","שם ספק","מספר עוסק / ח.פ.","סוג מסמך","מספר מסמך","תאריך המסמך","תקופת דיווח",
-         "סכום לפני מע\"מ","סך הכל מע\"מ","סכום כולל מע\"מ","מטבע","שולם באמצעות",
-         "סיווג הוצאה","שם הקובץ","expense_id","רמת ודאות","הערות"]
 
 def main():
-    raw=json.load(open(RAW,encoding="utf-8"))
-    ov={k:v for k,v in (json.load(open(OVERRIDES,encoding="utf-8")).items() if os.path.exists(OVERRIDES) else [])
-        if not k.startswith("_")} if os.path.exists(OVERRIDES) else {}
-    files={f.split("_")[1]:f for f in os.listdir(DOCS)} if os.path.isdir(DOCS) else {}
+    scan = json.load(open(SCAN, encoding="utf-8")) if os.path.exists(SCAN) else {}
+    scan = {k: v for k, v in scan.items() if not k.startswith("_")}
+    idx = {}
+    if os.path.exists(INDEX):
+        for r in csv.DictReader(open(INDEX, encoding="utf-8-sig")):
+            idx[r["expense_id"]] = r
+    files = {f.split("_")[1]: f for f in os.listdir(DOCS)} if os.path.isdir(DOCS) else {}
+    rows = []
+    for eid, meta in idx.items():
+        s = scan.get(eid, {})
+        date = s.get("date") or (meta.get("reportingDate") or meta.get("date") or "")[:10]
+        rows.append(((date or "")[:7], eid, meta, s, date))
+    rows.sort(key=lambda x: (x[0], x[1]))
 
-    wb=Workbook(); ws=wb.active; ws.title="הוצאות מאושרות"; ws.sheet_view.rightToLeft=True
-    for c,n in enumerate(COLUMNS,1):
-        cell=ws.cell(1,c,n); cell.fill=HDR; cell.font=Font(bold=True,color="FFFFFF")
-        cell.alignment=Alignment(horizontal="center",vertical="center",wrap_text=True); cell.border=THIN
-    ws.freeze_panes="A2"
+    wb = Workbook()
+    sm = wb.active; sm.title = "סיכום חודשי"; sm.sheet_view.rightToLeft = True
+    sm.append(["חודש", "מס' מסמכים", "סה\"כ כולל מע\"מ", "סה\"כ מע\"מ תשומות", "נסרקו"])
+    for c in sm[1]:
+        c.fill = HDR; c.font = Font(bold=True, color="FFFFFF"); c.border = THIN
+    bm = defaultdict(lambda: [0, 0.0, 0.0, 0])
+    for ym, eid, meta, s, date in rows:
+        b = bm[ym]; b[0] += 1; b[1] += fnum(s.get("amount")); b[2] += fnum(s.get("vat")); b[3] += 1 if s else 0
+    for ym in sorted(bm):
+        b = bm[ym]; lbl = f"{HEBMON.get(ym[5:7], ym[5:7])} {ym[:4]}" if len(ym) >= 7 else "ללא תאריך"
+        sm.append([lbl, b[0], round(b[1], 2), round(b[2], 2), f"{b[3]}/{b[0]}"])
+    sm.append([])
+    sm.append(["סה\"כ", sum(b[0] for b in bm.values()), round(sum(b[1] for b in bm.values()), 2),
+               round(sum(b[2] for b in bm.values()), 2),
+               f"{sum(b[3] for b in bm.values())}/{sum(b[0] for b in bm.values())}"])
+    for c in sm[sm.max_row]:
+        c.font = Font(bold=True); c.fill = SUB
+    for i, w in enumerate([16, 13, 18, 18, 10], 1):
+        sm.column_dimensions[get_column_letter(i)].width = w
 
-    discrepancies=[]  # (idx, supplier, field, morning, mine)
-    rows=sorted(raw.values(), key=lambda x:x.get("date",""))
-    r=2; stats={"g":0,"y":0,"red":0}
-    for i,e in enumerate(rows,1):
-        eid=e["id"]; idx=f"{i:04d}"; sup=(e.get("supplier") or {}).get("name","")
-        fname=files.get(eid,""); text=gettext(os.path.join(DOCS,fname)) if fname else ""
-        nt=norm(text); has=len(text.strip())>20
-        mtype=DOC_TYPES.get(e.get("documentType"),e.get("documentType"))
-        amt=e.get("amount"); vat=e.get("vat"); net=e.get("amountExcludeVat")
-        num=e.get("number"); date=(e.get("date") or "")[:10]
-        a_ok=in_text(amt,nt); n_ok=in_text(num,nt); ttype=doctype_from_text(text)
-
-        # discrepancy detection (only meaningful when we have text)
-        if has:
-            if a_ok is False: discrepancies.append((idx,sup,"סכום",amt,"לא נמצא בטקסט"))
-            if e.get("vat") not in (None,0) and in_text(vat,nt) is False:
-                discrepancies.append((idx,sup,"מע\"מ",vat,"לא נמצא בטקסט"))
-            if ttype and ttype!=mtype:
-                discrepancies.append((idx,sup,"סיווג מסמך",mtype,ttype))
-
-        o=ov.get(eid,{})
-        vals={"שם ספק":sup,"מספר עוסק / ח.פ.":(e.get("supplier") or {}).get("taxId",""),
-              "סוג מסמך":(ttype or mtype),"מספר מסמך":num,"תאריך המסמך":date,
-              "תקופת דיווח":bimonthly(date or e.get("reportingDate")),
-              "סכום לפני מע\"מ":net,"סך הכל מע\"מ":vat,"סכום כולל מע\"מ":amt,"מטבע":e.get("currency",""),
-              "שולם באמצעות":PAY.get(e.get("paymentType"),e.get("paymentType")),
-              "סיווג הוצאה":(e.get("accountingClassification") or {}).get("title","")}
-        for k,vv in o.get("set",{}).items(): vals[k]=vv
-
-        notes=[]
-        if not fname: notes.append("אין קובץ")
-        elif not has: notes.append("מסמך סרוק — נקרא ויזואלית" if eid in ov else "מסמך סרוק — אימות ויזואלי מומלץ")
-        if o.get("note"): notes.append(o["note"])
-
-        crit_red=0
-        for c,n in enumerate(COLUMNS,1):
-            if n=="#index": cell=ws.cell(r,c,i)
-            elif n=="expense_id": cell=ws.cell(r,c,eid)
-            elif n=="רמת ודאות": cell=ws.cell(r,c,"")
-            elif n=="הערות": cell=ws.cell(r,c,"; ".join(notes))
-            elif n=="שם הקובץ":
-                cell=ws.cell(r,c,fname)
-                if fname: cell.hyperlink=DOCS+"/"+fname; cell.font=Font(color="0563C1",underline="single")
-            else: cell=ws.cell(r,c,vals.get(n,""))
-            cell.border=THIN; cell.alignment=Alignment(horizontal="center",vertical="center",wrap_text=True)
-            # colour the critical cells
-            if n in ("סכום כולל מע\"מ","מספר מסמך"):
-                ok = a_ok if n.startswith("סכום") else n_ok
-                if eid in ov: fill=GREEN
-                elif ok is True: fill=GREEN
-                elif ok is None: fill=YELLOW
-                elif not has: fill=YELLOW
-                else: fill=RED
-                cell.fill=fill
-                if fill is RED: crit_red+=1
-                stats["g" if fill is GREEN else "y" if fill is YELLOW else "red"]+=1
-        ov_cell=ws.cell(r,COLUMNS.index("רמת ודאות")+1)
-        lvl=o.get("ov")
-        if lvl: ov_cell.value,ov_cell.fill={"high":("גבוהה",GREEN),"medium":("בינונית",YELLOW),"low":("נמוכה — לבדיקה",RED)}[lvl]
-        elif crit_red==0: ov_cell.value,ov_cell.fill="גבוהה",GREEN
-        elif crit_red==1: ov_cell.value,ov_cell.fill="בינונית",YELLOW
-        else: ov_cell.value,ov_cell.fill="נמוכה — לבדיקה",RED
-        r+=1
-
-    widths=[7,26,16,20,15,13,12,12,11,12,7,16,26,30,38,14,40]
-    for c,w in enumerate(widths,1): ws.column_dimensions[get_column_letter(c)].width=w
+    ws = wb.create_sheet("פירוט לפי חודש"); ws.sheet_view.rightToLeft = True
+    for c, name in enumerate(COLS, 1):
+        cell = ws.cell(1, c, name); cell.fill = HDR; cell.font = Font(bold=True, color="FFFFFF", size=10)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True); cell.border = THIN
+    ws.freeze_panes = "A2"
+    r = 2; cur = None; st = {"green": 0, "yellow": 0, "red": 0, "scanned": 0}
+    for ym, eid, meta, s, date in rows:
+        if ym != cur:
+            cur = ym; lbl = f"— {HEBMON.get(ym[5:7], ym[5:7])} {ym[:4]} —" if len(ym) >= 7 else "— ללא תאריך —"
+            ws.cell(r, 1, lbl).font = Font(bold=True)
+            for c in range(1, len(COLS) + 1): ws.cell(r, c).fill = SUB
+            r += 1
+        if s: st["scanned"] += 1
+        fname = files.get(eid, ""); conf = s.get("confidence", "")
+        vals = {"#": meta.get("index", ""), "תאריך": date, "שם ספק": s.get("supplier", ""),
+                "ע.מ/ח.פ": s.get("taxId", ""), "סוג מסמך": s.get("doc_type", ""), "מס' מסמך": s.get("number", ""),
+                "לפני מע\"מ": s.get("net", ""), "מע\"מ": s.get("vat", ""), "כולל מע\"מ": s.get("amount", ""),
+                "מטבע": s.get("currency", ""), "שולם": s.get("payment", ""), "סוג הוצאה": s.get("expense_type", ""),
+                "סיווג PCN874": s.get("pcn", ""),
+                "ודאות": {"high": "🟩 גבוהה", "medium": "🟨 בינונית", "low": "🟥 לבדיקה"}.get(conf, "טרם נסרק"),
+                "שאלה/ספק לליבון": s.get("doubt", ""), "קובץ": fname, "expense_id": eid}
+        for c, name in enumerate(COLS, 1):
+            cell = ws.cell(r, c, vals[name]); cell.border = THIN
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            if name == "ודאות" and conf in CF: cell.fill = CF[conf]
+            if name == "קובץ" and fname:
+                cell.hyperlink = DOCS + "/" + fname; cell.font = Font(color="0563C1", underline="single")
+        st["green" if conf == "high" else "yellow" if conf == "medium" else "red" if conf == "low" else "scanned"] += 0
+        if conf == "high": st["green"] += 1
+        elif conf == "medium": st["yellow"] += 1
+        elif conf == "low": st["red"] += 1
+        r += 1
+    for c, w in enumerate([6, 11, 24, 13, 20, 14, 11, 10, 11, 7, 16, 22, 22, 12, 34, 30, 24], 1):
+        ws.column_dimensions[get_column_letter(c)].width = w
     wb.save(OUT)
-    json.dump(discrepancies, open("expenses_discrepancies.json","w",encoding="utf-8"), ensure_ascii=False, indent=1)
-    print(f"Wrote {OUT}: {r-2} rows. cells g={stats['g']} y={stats['y']} red={stats['red']}")
-    print(f"Discrepancies (text-based, pre visual review): {len(discrepancies)}")
+    print(f"Wrote {OUT}: {len(rows)} rows, scanned={st['scanned']} (G{st['green']} Y{st['yellow']} R{st['red']})")
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()

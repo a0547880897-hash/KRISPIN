@@ -28,3 +28,6 @@ expenses_raw.json
 index_expenses.csv
 expenses_overrides.json
 expenses_discrepancies.json
+expenses_scan.json
+catalog_expenses_FINAL.xlsx
+TASK2_STATE.md
