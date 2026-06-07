@@ -1,0 +1,15 @@
+{
+  "drive": {
+    "target_folder_name": "KRISPIN - 441 מסמכים לאישור (2026-06)",
+    "target_folder_id": "15PhIp59cLThaX715AMtgincHebBCNbyC",
+    "approved_expenses_folder_id": "1lvPMc8qbGeWMQuFFVHIO5Z72tbbxFMUb",
+    "note": "approved-expenses folder must NOT be modified"
+  },
+  "morning": {
+    "base": "https://api.greeninvoice.co.il/api/v1",
+    "expected_pending_drafts": 441
+  },
+  "reporting": {
+    "period": "bi-monthly"
+  }
+}

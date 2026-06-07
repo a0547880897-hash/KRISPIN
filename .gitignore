@@ -1,0 +1,19 @@
+# Secrets - NEVER commit
+.env
+*.secret
+
+# Downloaded supplier documents (sensitive business data)
+documents/
+downloads/
+
+# Working state / outputs
+.state/
+*.xlsx
+catalog.json
+*.log
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
