@@ -21,3 +21,8 @@ __pycache__/
 *.pyc
 venv/
 .venv/
+
+# Task 2 - approved expenses (sensitive)
+documents_expenses/
+expenses_raw.json
+index_expenses.csv
