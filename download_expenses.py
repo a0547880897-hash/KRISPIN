@@ -10,7 +10,7 @@ from morning_api import Morning
 DOCS = "documents_expenses"
 RAW = "expenses_raw.json"
 INDEX = "index_expenses.csv"
-FROM, TO = "2025-08-01", "2026-06-07"
+FROM, TO = "2025-06-01", "2026-06-07"
 
 
 def sanitize(name, n=40):
