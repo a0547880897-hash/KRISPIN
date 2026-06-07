@@ -84,6 +84,33 @@ COLS = ["מקור","תאריך","תקופה","שם ספק","ע.מ/ח.פ","סוג
 
 def main():
     rows = load_task1() + load_task2()
+    # ---- NORMALISE VAT: never trust Morning's vat field. ----
+    # An Israeli tax invoice's input VAT = amount*18/118. Everything with no
+    # Israeli VAT (foreign vendor/currency, Eilat, tickets, donations, arnona,
+    # va'ad bayit, tax-advance, fines, refunds) -> 0 and excluded.
+    FOREIGN = ["Meta","פייסבוק","Facebook","Amazon","Zoom","Cleverbridge","Topaz","JUST EAT","Paddle",
+        "Lemon","Google","Apple","Wix","Anthropic","Midjourney","Suno","Envato","Vyond","GoAnimate",
+        "monday","Renderforest","Elbruz","Ideogram","Runway","Wistia","Genspark","ManyChat","Manychat",
+        "MainFunc","Manus","Lovable","GoFullPage","Bitdefender","CapCut","PIPO","Grammarly","PandaDoc",
+        "Canva","DigitalOcean","OpenAI","Adobe","Dropbox","Microsoft","PYROGSS","Suno","GLAMOUROSA","Levski"]
+
+    def israeli_vat(d):
+        if (d["cur"] or "ILS") != "ILS":
+            return False
+        s = d["sup"] or ""
+        if any(k in s for k in FOREIGN):
+            return False
+        pcn = d["pcn"] or ""
+        if "ללא מע" in pcn or "לא נכלל" in pcn:
+            return False
+        if (d["dtype"] or "").startswith("כרטיס"):
+            return False
+        return True
+
+    for d in rows:
+        d["vat_orig"] = d["vat"]
+        d["vat"] = round(d["amount"] * 18 / 118, 2) if (d["amount"] and israeli_vat(d)) else 0
+        d["vat_changed"] = (fnum(d["vat_orig"]) or 0) != d["vat"]
     # keep VAT>0, ILS, date>=2025-06
     rows = [d for d in rows if (d["vat"] or 0) > 0 and (d["cur"] or "ILS") == "ILS"
             and str(d["date"] or "") >= "2025-06"]
@@ -126,11 +153,12 @@ def main():
             r+=1
         ded,dnote=deductible(d["et"],d["vat"])
         status = "⚠️ כפילות — לא לקזז" if d["dup"] else ""
+        corr = f" | מע\"מ חושב 18% מהסכום (מורנינג רשמה {d['vat_orig']})" if d.get("vat_changed") else ""
         vals={"מקור":d["src"],"תאריך":d["date"],"תקופה":p,"שם ספק":d["sup"],"ע.מ/ח.פ":d["tax"],
               "סוג מסמך":d["dtype"],"מס' מסמך":d["num"],"סכום כולל":d["amount"],"מע\"מ בחשבונית":d["vat"],
               "מע\"מ לקיזוז (מוצע)":(0 if d["dup"] else ded),"סיווג PCN874":d["pcn"],"סוג הוצאה":d["et"],
               "ודאות":{"high":"🟩","medium":"🟨","low":"🟥"}.get(d["conf"],""),"סטטוס":status,
-              "הערה":((d["note"] or "")+((" | "+dnote) if dnote else "")).strip(" |"),"קובץ":d["file"]}
+              "הערה":((d["note"] or "")+((" | "+dnote) if dnote else "")+corr).strip(" |"),"קובץ":d["file"]}
         for cc,name in enumerate(COLS,1):
             cell=ws.cell(r,cc,vals[name]); cell.border=THIN
             cell.alignment=Alignment(horizontal="center",vertical="center",wrap_text=True)
