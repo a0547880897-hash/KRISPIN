@@ -6,10 +6,13 @@
 documents/
 downloads/
 
-# Working state / outputs
+# Working state / outputs (contain sensitive business data)
 .state/
 *.xlsx
 catalog.json
+catalog_raw.json
+index.csv
+*.csv
 *.log
 
 # Python
