@@ -44,3 +44,12 @@ catalog_raw.json
 phase2_supplement.json
 expenses_overrides.json
 expenses_discrepancies.json
+scan_full.json
+worklist.json
+reread.json
+reread_extract.json
+scancat.json
+incomplete.json
+toscan.json
+full_update_log.json
+verify_pass1.json
