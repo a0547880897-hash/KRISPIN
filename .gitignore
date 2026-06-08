@@ -61,3 +61,25 @@ jszip.min.js
 usd_ids.json
 noamt.json
 rescan/
+
+# New-invoice batches (uploaded PDFs + scans, sensitive business data)
+newinv.pdf
+batch2.pdf
+invpdf/
+invpng/
+b2pdf/
+b2png/
+upload_map.json
+upload_progress.log
+draft_ids_before.json
+b2_scan.json
+b2_map.json
+b2_local_md5.json
+b2_ocr_state.json
+b2_before_ids.json
+b2_new_ids.json
+b2_unmatched.json
+b2_write_log.json
+
+# Large API blueprint reference (not needed in repo)
+gi_spec.json
