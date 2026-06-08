@@ -59,3 +59,5 @@ zip_paths.json
 *.html
 jszip.min.js
 usd_ids.json
+noamt.json
+rescan/
