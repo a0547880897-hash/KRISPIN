@@ -57,3 +57,4 @@ all_urls.json
 approved_meta.json
 zip_paths.json
 *.html
+jszip.min.js
