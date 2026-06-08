@@ -31,3 +31,13 @@ expenses_discrepancies.json
 expenses_scan.json
 catalog_expenses_FINAL.xlsx
 TASK2_STATE.md
+
+# Phase 1/2 live state (sensitive)
+drafts_live.json
+expenses_live.json
+phase1_plan.json
+phase1_log.json
+phase2_*.json
+expenses_raw.json
+expenses_scan.json
+catalog_raw.json
