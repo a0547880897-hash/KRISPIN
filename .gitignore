@@ -41,3 +41,6 @@ phase2_*.json
 expenses_raw.json
 expenses_scan.json
 catalog_raw.json
+phase2_supplement.json
+expenses_overrides.json
+expenses_discrepancies.json
