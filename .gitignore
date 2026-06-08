@@ -53,3 +53,7 @@ incomplete.json
 toscan.json
 full_update_log.json
 verify_pass1.json
+all_urls.json
+approved_meta.json
+zip_paths.json
+*.html
