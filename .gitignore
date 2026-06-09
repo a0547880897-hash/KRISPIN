@@ -96,3 +96,14 @@ b3_existing_index.json
 b3_unmatched.json
 b3_write_log.json
 b3_upload.log
+
+# Batch4 (digital invoices PDF)
+batch4.pdf
+b4pdf/
+b4_data.json
+b4_map.json
+b4_dedup.json
+b4_add.json
+b4_existing_index.json
+b4_write_log.json
+b4_upload.log
