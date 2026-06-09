@@ -83,3 +83,16 @@ b2_write_log.json
 
 # Large API blueprint reference (not needed in repo)
 gi_spec.json
+
+# Batch3 (new 27-invoice file)
+batch3.pdf
+b3png/
+b3pdf/
+b3_scan.json
+b3_map.json
+b3_local_md5.json
+b3_ocr_state.json
+b3_existing_index.json
+b3_unmatched.json
+b3_write_log.json
+b3_upload.log
