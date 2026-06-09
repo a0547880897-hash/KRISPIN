@@ -107,3 +107,7 @@ b4_add.json
 b4_existing_index.json
 b4_write_log.json
 b4_upload.log
+
+# Petty-cash (קופה קטנה) draft-fix working data
+kk_one.json
+kk_targets.json
