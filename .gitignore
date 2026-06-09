@@ -111,3 +111,8 @@ b4_upload.log
 # Petty-cash (קופה קטנה) draft-fix working data
 kk_one.json
 kk_targets.json
+
+# kupa-katana fix/approve data
+kk_results.json
+kk_approved_table.json
+kk_dups.json
