@@ -112,7 +112,8 @@ b4_upload.log
 kk_one.json
 kk_targets.json
 
-# kupa-katana fix/approve data
-kk_results.json
-kk_approved_table.json
-kk_dups.json
+# tami4 upload working data
+tami4.json
+tami4_amt.json
+tami4_test.json
+upload_log1.json
