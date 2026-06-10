@@ -112,6 +112,15 @@ b4_upload.log
 kk_one.json
 kk_targets.json
 
+# Petty-cash electricity batch (קופה קטנה - תגל, חשמל) working data
+kk_chashmal/
+kk_chashmal_data.json
+kk_chashmal_map.json
+kk_chashmal_before.json
+kk_chashmal_new.json
+kk_chashmal_unmatched.json
+kk_chashmal_write_log.json
+
 # tami4 upload working data
 tami4.json
 tami4_amt.json
