@@ -130,3 +130,15 @@ tami4_test.json
 upload_log1.json
 rest_upload.json
 rest_log.json
+
+# file-attach working data
+attach_all.py
+attach_fix.py
+attach_test.json
+attach_one.json
+attach_all_log.json
+attach_fix_log.json
+attach_all.out
+f_*.pdf
+auto_*.png
+tami4_*.pdf
