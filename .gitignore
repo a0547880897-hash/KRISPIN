@@ -112,35 +112,12 @@ b4_upload.log
 kk_one.json
 kk_targets.json
 
-# tami4 upload working data
-tami4.json
-tami4_amt.json
-tami4_test.json
-upload_log1.json
+# Check3 working data
+fix3_log.json
+dup55_*.png
+_*.json
 
-rest_upload.json
-rest_log.json
-
-# tax-invoice source/working data
-tax_invoices.pdf
-tax_pages.json
-tami4.json
-tami4_amt.json
-tami4_test.json
-upload_log1.json
-rest_upload.json
-rest_log.json
-
-# file-attach working data
-attach_all.py
-attach_fix.py
-attach_test.json
-attach_one.json
-attach_all_log.json
-attach_fix_log.json
-attach_all.out
-f_*.pdf
-auto_*.png
-tami4_*.pdf
-
-expenses_audit.csv
+# Check3 working data
+fix3_log.json
+dup55_*.png
+_*.json
