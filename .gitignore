@@ -142,3 +142,5 @@ attach_all.out
 f_*.pdf
 auto_*.png
 tami4_*.pdf
+
+expenses_audit.csv
