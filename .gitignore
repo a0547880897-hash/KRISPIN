@@ -120,3 +120,13 @@ upload_log1.json
 
 rest_upload.json
 rest_log.json
+
+# tax-invoice source/working data
+tax_invoices.pdf
+tax_pages.json
+tami4.json
+tami4_amt.json
+tami4_test.json
+upload_log1.json
+rest_upload.json
+rest_log.json
