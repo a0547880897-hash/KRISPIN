@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>תיק התכתבות — קריספין / שילנסקי · דרור</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef1f6; --panel:#ffffff; --ink:#1f2733; --muted:#6b7686;
+    --line:#e3e8f0; --accent:#2d6cdf; --sent:#2d6cdf; --recv:#1f9d6b;
+    --sent-soft:#eaf1fe; --recv-soft:#e8f7f0; --chip:#f1f4f9;
+    --shadow:0 1px 3px rgba(20,30,50,.06),0 6px 24px rgba(20,30,50,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Assistant',system-ui,'Segoe UI',Arial,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:0 16px 80px}
+  header.top{
+    position:sticky;top:0;z-index:20;background:rgba(238,241,246,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+    padding:18px 0 12px;margin-bottom:18px;
+  }
+  .top .wrap{padding-bottom:0}
+  h1{font-size:21px;margin:0 0 2px;font-weight:700;letter-spacing:-.2px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 14px}
+  .stats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:7px 12px;font-size:13px;box-shadow:var(--shadow)}
+  .stat b{font-size:15px}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .search{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:9px 12px;box-shadow:var(--shadow)}
+  .search input{border:0;outline:0;width:100%;font:inherit;background:transparent;color:inherit}
+  .seg{display:flex;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+  .seg button{border:0;background:transparent;font:inherit;color:var(--muted);
+    padding:9px 14px;cursor:pointer;font-size:13px}
+  .seg button.active{background:var(--accent);color:#fff;font-weight:600}
+  .btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;
+    padding:9px 14px;cursor:pointer;font:inherit;font-size:13px;color:var(--ink);
+    box-shadow:var(--shadow)}
+  .count{color:var(--muted);font-size:13px;margin:2px 2px 14px}
+
+  .day{display:flex;align-items:center;gap:10px;margin:26px 2px 12px}
+  .day::before,.day::after{content:"";height:1px;background:var(--line);flex:1}
+  .day span{color:var(--muted);font-size:12.5px;font-weight:600;
+    background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:3px 12px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);margin:10px 0;overflow:hidden;border-inline-start:4px solid var(--line)}
+  .card.sent{border-inline-start-color:var(--sent)}
+  .card.received{border-inline-start-color:var(--recv)}
+  .chead{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;cursor:pointer}
+  .chead:hover{background:#fafbfe}
+  .badge{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;margin-top:2px}
+  .badge.sent{background:var(--sent-soft);color:var(--sent)}
+  .badge.received{background:var(--recv-soft);color:var(--recv)}
+  .cmain{flex:1;min-width:0}
+  .csubject{font-weight:600;font-size:15.5px;margin:0 0 3px;word-break:break-word}
+  .cmeta{font-size:12.5px;color:var(--muted);word-break:break-word}
+  .cmeta .pp{color:var(--ink)}
+  .cright{display:flex;flex-direction:column;align-items:flex-end;gap:6px;white-space:nowrap}
+  .ctime{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .clip{font-size:12px;color:var(--muted)}
+  .chev{color:var(--muted);transition:transform .2s;font-size:13px}
+  .card.open .chev{transform:rotate(90deg)}
+
+  .cbody{display:none;border-top:1px solid var(--line);padding:8px 18px 18px}
+  .card.open .cbody{display:block}
+  .recips{font-size:12.5px;color:var(--muted);padding:10px 0;border-bottom:1px dashed var(--line);margin-bottom:8px}
+  .recips div{margin:1px 0}
+  .recips b{color:var(--ink);font-weight:600}
+  .email-body{font-size:15px;overflow-x:auto}
+  .email-body img{max-width:100%;height:auto}
+  .email-body table{max-width:100%}
+  .email-body a{color:var(--accent)}
+  .att{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .att h4{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:600}
+  .att-list{display:flex;flex-wrap:wrap;gap:8px}
+  .att-chip{display:inline-flex;align-items:center;gap:7px;background:var(--chip);
+    border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:13px;
+    text-decoration:none;color:var(--ink)}
+  .att-chip:hover{border-color:var(--accent)}
+  .att-chip .ic{font-size:15px}
+  .att-chip .sz{color:var(--muted);font-size:11.5px}
+  .att-note{font-size:11.5px;color:var(--muted);margin-top:8px}
+  .open-orig{display:inline-block;margin-top:12px;font-size:12.5px;color:var(--accent);text-decoration:none}
+  .empty{text-align:center;color:var(--muted);padding:60px 0}
+  footer{color:var(--muted);font-size:12px;text-align:center;margin-top:40px}
+  @media print{
+    header.top{position:static} .controls,.stats,.chev,.seg,.search,.btn{display:none}
+    .cbody{display:block!important} .card{break-inside:avoid;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>תיק התכתבות — חן קריספין מול משרד שילנסקי / עו״ד יוסי דרור</h1>
+    <p class="sub">תיק הוצל״פ 522087-11-25 · בנק לאומי למשכנתאות · התכתבות עם yossi@shilansky.co.il ו‑Yossi@YossiDror.co.il</p>
+    <div class="stats" id="stats"></div>
+    <div class="controls">
+      <label class="search">🔎<input id="q" type="search" placeholder="חיפוש בנושא, בתוכן ובשמות…" autocomplete="off"></label>
+      <div class="seg" id="dir">
+        <button data-d="all" class="active">הכול</button>
+        <button data-d="sent">נשלחו</button>
+        <button data-d="received">התקבלו</button>
+      </div>
+      <button class="btn" id="sortBtn" data-asc="1">⌃ הישן לחדש</button>
+      <button class="btn" id="expandBtn">פתח הכול</button>
+    </div>
+    <div class="count" id="count"></div>
+  </div>
+</header>
+
+<main class="wrap" id="list"></main>
+<footer class="wrap">הופק אוטומטית מתיבת hen@ak-adv.co.il · התכתבות מלאה לתיעוד · לחיצה על קובץ מצורף פותחת את המייל המקורי ב‑Outlook</footer>
+
+<script>
+const EMAILS = /*__DATA__*/;
+
+const ME = "hen@ak-adv.co.il";
+const fmtDate = new Intl.DateTimeFormat('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jerusalem'});
+const fmtDay  = new Intl.DateTimeFormat('he-IL',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Asia/Jerusalem'});
+const fmtTime = new Intl.DateTimeFormat('he-IL',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jerusalem'});
+
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function people(list){return (list||[]).map(p=>esc(p.name||p.address||'')).join(', ');}
+function icon(ct,name){
+  ct=(ct||'').toLowerCase(); name=(name||'').toLowerCase();
+  if(ct.includes('pdf')||name.endsWith('.pdf'))return '📕';
+  if(ct.includes('word')||name.endsWith('.doc')||name.endsWith('.docx'))return '📘';
+  if(ct.includes('sheet')||ct.includes('excel')||name.endsWith('.xls')||name.endsWith('.xlsx'))return '📗';
+  if(ct.includes('image'))return '🖼️';
+  return '📎';
+}
+function kb(n){if(!n)return '';return n>1048576?(n/1048576).toFixed(1)+'MB':Math.max(1,Math.round(n/1024))+'KB';}
+
+const state={dir:'all',q:'',asc:true,open:new Set(),expandAll:false};
+
+function render(){
+  const list=document.getElementById('list');
+  let rows=EMAILS.slice().sort((a,b)=>(a.date<b.date?-1:a.date>b.date?1:0));
+  if(!state.asc)rows.reverse();
+  if(state.dir!=='all')rows=rows.filter(m=>m.direction===state.dir);
+  const q=state.q.trim().toLowerCase();
+  if(q){
+    rows=rows.filter(m=>{
+      const hay=[m.subject,people(m.to),people(m.cc),(m.from&&(m.from.name+' '+m.from.address)),
+        (m.bodyHtml||'').replace(/<[^>]+>/g,' ')].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }
+  document.getElementById('count').textContent=`מציג ${rows.length} מתוך ${EMAILS.length} הודעות`;
+  if(!rows.length){list.innerHTML='<div class="empty">לא נמצאו הודעות התואמות לחיפוש.</div>';return;}
+
+  let html='',lastDay='';
+  for(const m of rows){
+    const d=new Date(m.date);
+    const dayKey=fmtDay.format(d);
+    if(dayKey!==lastDay){html+=`<div class="day"><span>${esc(fmtDate.format(d))}</span></div>`;lastDay=dayKey;}
+    const opened=state.expandAll||state.open.has(m.id);
+    const dirHe=m.direction==='sent'?'נשלח':'התקבל';
+    const realAtt=(m.attachments||[]).filter(a=>!a.isInline);
+    const inlineCount=(m.attachments||[]).filter(a=>a.isInline).length;
+    const fromTxt=m.direction==='sent'?'חן קריספין':esc(m.from&&(m.from.name||m.from.address)||'');
+    html+=`<div class="card ${m.direction} ${opened?'open':''}" data-id="${esc(m.id)}">
+      <div class="chead" onclick="toggle('${esc(m.id).replace(/'/g,"\\'")}')">
+        <span class="badge ${m.direction}">${dirHe}</span>
+        <div class="cmain">
+          <div class="csubject">${esc(m.subject)}</div>
+          <div class="cmeta"><span class="pp">${fromTxt}</span> ← אל ${people(m.to)||'—'}</div>
+        </div>
+        <div class="cright">
+          <span class="ctime">${esc(fmtTime.format(d))}</span>
+          ${realAtt.length?`<span class="clip">📎 ${realAtt.length}</span>`:''}
+          <span class="chev">▶</span>
+        </div>
+      </div>
+      <div class="cbody">
+        <div class="recips">
+          <div><b>מאת:</b> ${esc(m.from&&(m.from.name?m.from.name+' ':''))}${esc(m.from&&m.from.address||'')}</div>
+          <div><b>אל:</b> ${people(m.to)||'—'}</div>
+          ${m.cc&&m.cc.length?`<div><b>עותק:</b> ${people(m.cc)}</div>`:''}
+        </div>
+        <div class="email-body">${opened?(m.bodyHtml||''):''}</div>
+        ${realAtt.length?`<div class="att"><h4>קבצים מצורפים (${realAtt.length})</h4><div class="att-list">${
+          realAtt.map(a=>`<a class="att-chip" href="${esc(m.webLink)}" target="_blank" rel="noopener" title="פתיחת המייל המקורי ב-Outlook"><span class="ic">${icon(a.contentType,a.name)}</span><span>${esc(a.name)}</span><span class="sz">${kb(a.size)}</span></a>`).join('')
+        }</div>${inlineCount?`<div class="att-note">+ ${inlineCount} תמונות מוטמעות בגוף ההודעה (לוגו/חתימה/צילומי מסך)</div>`:''}</div>`:
+        (inlineCount?`<div class="att"><div class="att-note">📎 ${inlineCount} תמונות מוטמעות בגוף ההודעה</div></div>`:'')}
+        <a class="open-orig" href="${esc(m.webLink)}" target="_blank" rel="noopener">פתיחת המקור ב‑Outlook ↗</a>
+      </div>
+    </div>`;
+  }
+  list.innerHTML=html;
+  // hide images that fail to load (cid: inline refs)
+  list.querySelectorAll('.email-body img').forEach(img=>{img.addEventListener('error',()=>{img.style.display='none';});});
+}
+
+function toggle(id){
+  if(state.open.has(id))state.open.delete(id);else state.open.add(id);
+  render();
+}
+window.toggle=toggle;
+
+function buildStats(){
+  const sent=EMAILS.filter(m=>m.direction==='sent').length;
+  const recv=EMAILS.filter(m=>m.direction==='received').length;
+  const att=EMAILS.reduce((s,m)=>s+(m.attachments||[]).filter(a=>!a.isInline).length,0);
+  const dates=EMAILS.map(m=>m.date).filter(Boolean).sort();
+  const range=dates.length?`${fmtDay.format(new Date(dates[0]))} – ${fmtDay.format(new Date(dates[dates.length-1]))}`:'';
+  document.getElementById('stats').innerHTML=
+    `<div class="stat"><b>${EMAILS.length}</b> הודעות</div>`+
+    `<div class="stat" style="color:var(--sent)"><b>${sent}</b> נשלחו</div>`+
+    `<div class="stat" style="color:var(--recv)"><b>${recv}</b> התקבלו</div>`+
+    `<div class="stat"><b>${att}</b> קבצים מצורפים</div>`+
+    (range?`<div class="stat">${range}</div>`:'');
+}
+
+document.getElementById('q').addEventListener('input',e=>{state.q=e.target.value;render();});
+document.getElementById('dir').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  state.dir=b.dataset.d;
+  document.querySelectorAll('#dir button').forEach(x=>x.classList.toggle('active',x===b));
+  render();
+});
+document.getElementById('sortBtn').addEventListener('click',e=>{
+  state.asc=!state.asc;
+  e.target.textContent=state.asc?'⌃ הישן לחדש':'⌄ החדש לישן';
+  render();
+});
+document.getElementById('expandBtn').addEventListener('click',e=>{
+  state.expandAll=!state.expandAll;
+  e.target.textContent=state.expandAll?'כווץ הכול':'פתח הכול';
+  render();
+});
+
+buildStats();
+render();
+</script>
+</body>
+</html>
