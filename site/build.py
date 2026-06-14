@@ -48,9 +48,13 @@ def main():
             print("WARN could not parse", fp, e)
             continue
         mid = msg.get("internetMessageId") or os.path.basename(fp)
-        # de-dup: prefer the record that actually has a body
-        if mid in by_id and len(by_id[mid].get("bodyHtml") or "") >= len(msg.get("bodyHtml") or ""):
-            continue
+        # de-dup: prefer the record that has a sender address, then the longer body
+        if mid in by_id:
+            cur = by_id[mid]
+            cur_score = (1 if (cur.get("from") or {}).get("address") else 0, len(cur.get("bodyHtml") or ""))
+            new_score = (1 if (msg.get("from") or {}).get("address") else 0, len(msg.get("bodyHtml") or ""))
+            if new_score <= cur_score:
+                continue
         by_id[mid] = msg
 
     msgs = []
@@ -83,6 +87,9 @@ def main():
         tpl = fh.read()
 
     payload = json.dumps(msgs, ensure_ascii=False)
+    # Prevent any "</script>" inside email bodies from terminating the inline script.
+    # Inside a JS/JSON string literal "<\/" decodes to "</", so this is content-safe.
+    payload = payload.replace("</", "<\\/")
     out = tpl.replace("/*__DATA__*/", payload)
     with open(OUT, "w", encoding="utf-8") as fh:
         fh.write(out)
