@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>תיק התכתבות משפטי — קריספין / שילנסקי · דרור</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef1f6; --panel:#fff; --ink:#1d2530; --muted:#6b7686; --line:#e3e8f0;
+    --sent:#2563c9; --sent-soft:#eef4ff; --sent-bd:#bcd2f5;
+    --recv:#138a5e; --recv-soft:#eafaf2; --recv-bd:#aee3cb;
+    --hl:rgba(255,214,0,.55); --chip:#f1f4f9;
+    --shadow:0 1px 3px rgba(20,30,50,.06),0 8px 26px rgba(20,30,50,.07);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Assistant',system-ui,'Segoe UI',Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:0 16px}
+  a{color:var(--sent)}
+
+  header.top{position:sticky;top:0;z-index:30;background:rgba(238,241,246,.94);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 0 10px}
+  h1{font-size:20px;margin:0 0 2px;font-weight:800;letter-spacing:-.2px}
+  .sub{color:var(--muted);font-size:13.5px;margin:0 0 10px}
+  .stats{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:5px 11px;font-size:12.5px;box-shadow:var(--shadow)}
+  .stat b{font-size:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .search{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:var(--panel);
+    border:1px solid var(--line);border-radius:10px;padding:8px 12px;box-shadow:var(--shadow)}
+  .search input{border:0;outline:0;width:100%;font:inherit;background:transparent;color:inherit}
+  .seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+  .seg button{border:0;background:transparent;font:inherit;color:var(--muted);padding:8px 12px;cursor:pointer;font-size:12.5px}
+  .seg button.active{background:var(--sent);color:#fff;font-weight:700}
+  .btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;cursor:pointer;
+    font:inherit;font-size:12.5px;color:var(--ink);box-shadow:var(--shadow);white-space:nowrap}
+  .btn:hover{border-color:var(--sent)}
+  .btn.on{background:var(--sent);color:#fff;border-color:var(--sent);font-weight:700}
+  .saved{font-size:12px;color:var(--recv);opacity:0;transition:opacity .3s}
+  .saved.show{opacity:1}
+  .count{color:var(--muted);font-size:12.5px;margin:8px 2px 0}
+
+  main{padding:18px 0 90px}
+  .sep{display:flex;align-items:center;gap:10px;margin:30px 2px 14px}
+  .sep::before,.sep::after{content:"";height:1px;background:var(--line);flex:1}
+  .sep span{font-size:13px;font-weight:800;color:#46506a;background:var(--panel);border:1px solid var(--line);
+    border-radius:20px;padding:5px 16px;box-shadow:var(--shadow)}
+  .threadhead{margin:26px 2px 6px;font-weight:800;font-size:14.5px;color:#33405c;
+    border-inline-start:4px solid var(--sent);padding-inline-start:10px}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+    margin:12px 0;overflow:hidden;border-inline-start:5px solid var(--line)}
+  .card.sent{border-inline-start-color:var(--sent)}
+  .card.received{border-inline-start-color:var(--recv)}
+  .card.removed{display:none}
+  body.show-removed .card.removed{display:block;opacity:.55}
+  body.show-removed .card.removed .legal{filter:grayscale(.4)}
+
+  .legal{font-size:12.5px;padding:11px 16px;border-bottom:1px solid var(--line)}
+  .card.sent .legal{background:var(--sent-soft);border-bottom-color:var(--sent-bd)}
+  .card.received .legal{background:var(--recv-soft);border-bottom-color:var(--recv-bd)}
+  .legal .row1{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px}
+  .tag{font-size:11px;font-weight:800;padding:2px 9px;border-radius:20px}
+  .tag.sent{background:var(--sent);color:#fff}
+  .tag.received{background:var(--recv);color:#fff}
+  .legal b{font-weight:700}
+  .legal .ml{color:var(--muted)}
+  .legal .when{font-weight:700;color:#222}
+  .legal .reply{margin-top:5px;color:#7a5a00;background:rgba(255,214,0,.16);border:1px solid rgba(212,170,0,.35);
+    border-radius:7px;padding:3px 9px;display:inline-block;font-size:12px}
+  .subj{font-weight:700;font-size:14px;margin:6px 0 0}
+
+  .body-wrap{padding:10px 18px 6px}
+  .email-body{font-size:15px;overflow-x:auto;word-break:break-word}
+  .email-body img{max-width:100%;height:auto}
+  .email-body table{max-width:100%}
+  mark.hl{background:var(--hl);padding:0 1px;border-radius:2px}
+
+  .att{margin:6px 18px;padding:10px 0 2px;border-top:1px dashed var(--line)}
+  .att h4{margin:0 0 7px;font-size:12px;color:var(--muted);font-weight:700}
+  .att-list{display:flex;flex-wrap:wrap;gap:7px}
+  .att-chip{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border:1px solid var(--line);
+    border-radius:8px;padding:6px 10px;font-size:12.5px;text-decoration:none;color:var(--ink)}
+  .att-chip:hover{border-color:var(--sent)}
+  .att-chip .sz{color:var(--muted);font-size:11px}
+  .att-note{font-size:11px;color:var(--muted);margin-top:6px}
+
+  .note{display:block;width:calc(100% - 36px);margin:8px 18px;font:inherit;font-size:13px;
+    border:1px dashed #d8b34a;background:#fffdf3;border-radius:9px;padding:8px 10px;resize:vertical;min-height:34px;color:#5b4a13}
+  .note::placeholder{color:#b9a565}
+
+  .actions{display:flex;flex-wrap:wrap;gap:6px;padding:6px 16px 14px;border-top:1px solid var(--line);margin-top:6px}
+  .act{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;font:inherit;font-size:12px;
+    cursor:pointer;color:#3a4456}
+  .act:hover{border-color:var(--sent);color:var(--sent)}
+  .act.danger:hover{border-color:#c0392b;color:#c0392b}
+
+  /* focus mode: fade everything except yellow highlights */
+  body.focus .email-body, body.focus .email-body *{color:rgba(20,24,32,.07)!important}
+  body.focus .email-body img{opacity:.1}
+  body.focus .email-body mark.hl, body.focus .email-body mark.hl *{color:#161a12!important;background:rgba(255,206,0,.72)!important}
+  body.focus .card:not(:has(mark.hl)){opacity:.45}
+
+  .empty{text-align:center;color:var(--muted);padding:60px 0}
+  footer{color:var(--muted);font-size:12px;text-align:center;margin:30px 0 40px}
+
+  @media print{
+    header.top, .actions, .seg, .search, .btn, .count, .stats, .saved{display:none!important}
+    body{background:#fff}
+    .card{break-inside:avoid;box-shadow:none;border:1px solid #ccc;margin:8px 0}
+    .note{break-inside:avoid}
+    body.show-removed .card.removed{display:none!important}
+    a[href]::after{content:""}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>תיק התכתבות משפטי — חן קריספין מול שילנסקי / עו״ד יוסי דרור</h1>
+    <p class="sub">תיק הוצל״פ 522087-11-25 · בנק לאומי למשכנתאות · כתובות: yossi@shilansky.co.il · Yossi@YossiDror.co.il</p>
+    <div class="stats" id="stats"></div>
+    <div class="controls">
+      <label class="search">🔎<input id="q" type="search" placeholder="חיפוש בנושא, בתוכן, בשמות…" autocomplete="off"></label>
+      <div class="seg" id="dir">
+        <button data-d="all" class="active">הכול</button>
+        <button data-d="sent">שלי</button>
+        <button data-d="received">שהתקבלו</button>
+      </div>
+      <div class="seg" id="view">
+        <button data-v="flat" class="active">רציף</button>
+        <button data-v="month">לפי חודש</button>
+        <button data-v="thread">לפי שרשור</button>
+      </div>
+      <button class="btn" id="sortBtn">⌃ הישן→חדש</button>
+      <button class="btn" id="focusBtn">🔦 מצב מיקוד</button>
+      <button class="btn" id="removedBtn">👁 הצג שהוסרו</button>
+      <button class="btn" id="printBtn">🖨️ ייצוא PDF</button>
+      <button class="btn" id="exportBtn">⬇ גיבוי</button>
+      <button class="btn" id="importBtn">⬆ טעינת גיבוי</button>
+      <input id="importFile" type="file" accept="application/json" style="display:none">
+      <span class="saved" id="saved">נשמר ✓</span>
+    </div>
+    <div class="count" id="count"></div>
+  </div>
+</header>
+
+<main class="wrap" id="list"></main>
+<footer class="wrap">
+  ההערות, ההדגשות וההסרות שלך נשמרות אוטומטית בדפדפן זה. לשמירה בענן/מכשיר אחר — לחצו «גיבוי» לקובץ ו«טעינת גיבוי» לשחזור.
+</footer>
+
+<script>
+const EMAILS = /*__DATA__*/;
+const ME = "hen@ak-adv.co.il";
+const LS_KEY = "krispin_legal_annotations_v1";
+
+const fmtFull = new Intl.DateTimeFormat('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jerusalem'});
+const fmtShort= new Intl.DateTimeFormat('he-IL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jerusalem'});
+const fmtMonth= new Intl.DateTimeFormat('he-IL',{month:'long',year:'numeric',timeZone:'Asia/Jerusalem'});
+const fmtDay  = new Intl.DateTimeFormat('he-IL',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Asia/Jerusalem'});
+
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function nm(p){return (p&&(p.name||p.address))||'';}
+function people(list){return (list||[]).map(nm).filter(Boolean).join(', ');}
+
+let ann = {notes:{},highlights:{},removed:{}};
+try{const s=localStorage.getItem(LS_KEY); if(s) ann=Object.assign(ann,JSON.parse(s));}catch(e){}
+function save(){ try{localStorage.setItem(LS_KEY,JSON.stringify(ann)); flash();}catch(e){} }
+let st;
+function flash(){const el=document.getElementById('saved');el.classList.add('show');clearTimeout(st);st=setTimeout(()=>el.classList.remove('show'),1200);}
+
+const state={dir:'all',view:'flat',q:'',asc:true,focus:false,showRemoved:false,full:new Set()};
+
+function applyHighlights(container, snippets){
+  (snippets||[]).forEach(snip=>{
+    if(!snip) return;
+    const w=document.createTreeWalker(container,NodeFilter.SHOW_TEXT,{acceptNode(n){
+      return (n.parentNode && n.parentNode.nodeName!=='MARK' && n.nodeValue.indexOf(snip)!==-1)?1:3;}});
+    const hit=w.nextNode();
+    if(hit){
+      const i=hit.nodeValue.indexOf(snip);
+      const r=document.createRange(); r.setStart(hit,i); r.setEnd(hit,i+snip.length);
+      const mk=document.createElement('mark'); mk.className='hl';
+      try{r.surroundContents(mk);}catch(e){}
+    }
+  });
+}
+
+function legalHTML(m){
+  const d=new Date(m.date);
+  const dirHe=m.direction==='sent'?'נשלח':'התקבל';
+  const fromTxt=m.direction==='sent'?'חן קריספין (Hen@ak-adv.co.il)':`${esc(nm(m.from))} &lt;${esc(m.from.address)}&gt;`;
+  let reply='';
+  if(m.inReplyTo){
+    const rd=new Date(m.inReplyTo.date);
+    const rfrom=m.inReplyTo.direction==='sent'?'חן קריספין':esc(nm(m.inReplyTo.from));
+    reply=`<div class="reply">↩ בתגובה להודעה מאת <b>${rfrom}</b> מיום ${esc(fmtDay.format(rd))} בשעה ${esc(rd.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jerusalem'}))}</div>`;
+  }
+  let cc = m.cc&&m.cc.length?`<div><span class="ml">עותק:</span> ${esc(people(m.cc))}</div>`:'';
+  return `<div class="legal">
+    <div class="row1"><span class="tag ${m.direction}">${dirHe}</span>
+      <span><span class="ml">מאת:</span> <b>${fromTxt}</b></span></div>
+    <div><span class="ml">אל:</span> ${esc(people(m.to))||'—'}</div>
+    ${cc}
+    <div class="when">🗓 ${esc(fmtFull.format(d))}</div>
+    ${reply}
+    <div class="subj">${esc(m.subject)}</div>
+  </div>`;
+}
+
+function attHTML(m){
+  const real=(m.attachments||[]).filter(a=>!a.isInline);
+  const inl=(m.attachments||[]).filter(a=>a.isInline).length;
+  if(!real.length && !inl) return '';
+  const kb=n=>!n?'':(n>1048576?(n/1048576).toFixed(1)+'MB':Math.max(1,Math.round(n/1024))+'KB');
+  const ic=(a)=>{const c=(a.contentType||'').toLowerCase(),n=(a.name||'').toLowerCase();
+    if(c.includes('pdf')||n.endsWith('.pdf'))return '📕'; if(c.includes('word')||n.match(/\.docx?$/))return '📘';
+    if(c.includes('image'))return '🖼️'; if(c.includes('excel')||c.includes('sheet'))return '📗'; return '📎';};
+  let h=`<div class="att"><h4>קבצים מצורפים${real.length?` (${real.length})`:''}</h4>`;
+  if(real.length){h+=`<div class="att-list">`+real.map(a=>
+    `<a class="att-chip" href="${esc(m.webLink)}" target="_blank" rel="noopener" title="פתיחת המייל המקורי ב-Outlook">${ic(a)} <span>${esc(a.name)}</span><span class="sz">${kb(a.size)}</span></a>`).join('')+`</div>`;}
+  if(inl)h+=`<div class="att-note">+ ${inl} תמונות מוטמעות בגוף ההודעה (חתימה/לוגו/צילומי מסך)</div>`;
+  return h+`</div>`;
+}
+
+function renderCard(m){
+  const card=document.createElement('div');
+  card.className='card '+m.direction+(ann.removed[m.id]?' removed':'');
+  card.dataset.id=m.id;
+  const showFull=state.full.has(m.id);
+  const bodyHtml=showFull?(m.bodyFull||m.bodyNew):m.bodyNew;
+  card.innerHTML=legalHTML(m)
+    +`<div class="body-wrap"><div class="email-body">${bodyHtml}</div></div>`
+    +attHTML(m)
+    +`<textarea class="note" placeholder="הערה משפטית להודעה זו…">${esc(ann.notes[m.id]||'')}</textarea>`
+    +`<div class="actions">
+        <button class="act" data-a="hl">🖍️ הדגש בחירה</button>
+        <button class="act" data-a="clr">🧹 נקה הדגשות</button>
+        ${m.wasCut?`<button class="act" data-a="full">${showFull?'הסתר שרשור מלא':'הצג שרשור מלא ▾'}</button>`:''}
+        <button class="act danger" data-a="rm">${ann.removed[m.id]?'↩ שחזר':'🗑️ הסר מהשרשור'}</button>
+        <a class="act" href="${esc(m.webLink)}" target="_blank" rel="noopener">↗ מקור ב-Outlook</a>
+      </div>`;
+  // wire body highlights
+  const body=card.querySelector('.email-body');
+  applyHighlights(body, ann.highlights[m.id]);
+  body.querySelectorAll('img').forEach(im=>im.addEventListener('error',()=>im.style.display='none'));
+  // notes
+  card.querySelector('.note').addEventListener('input',e=>{ann.notes[m.id]=e.target.value;save();});
+  // actions
+  card.querySelectorAll('.act[data-a]').forEach(b=>b.addEventListener('click',()=>{
+    const a=b.dataset.a;
+    if(a==='hl') addHighlight(card,m);
+    else if(a==='clr'){delete ann.highlights[m.id];save();replaceCard(card,m);}
+    else if(a==='full'){ if(state.full.has(m.id))state.full.delete(m.id); else state.full.add(m.id); replaceCard(card,m);}
+    else if(a==='rm'){ if(ann.removed[m.id])delete ann.removed[m.id]; else ann.removed[m.id]=1; save(); replaceCard(card,m); updateStats();}
+  }));
+  return card;
+}
+
+function replaceCard(card,m){const fresh=renderCard(m);card.replaceWith(fresh);}
+
+function addHighlight(card,m){
+  const sel=window.getSelection();
+  const body=card.querySelector('.email-body');
+  if(!sel||sel.isCollapsed||!body.contains(sel.anchorNode)){alert('סמנו תחילה טקסט בתוך גוף ההודעה, ואז לחצו «הדגש בחירה».');return;}
+  const t=sel.toString().trim(); if(!t)return;
+  ann.highlights[m.id]=ann.highlights[m.id]||[];
+  if(!ann.highlights[m.id].includes(t)) ann.highlights[m.id].push(t);
+  sel.removeAllRanges(); save(); replaceCard(card,m);
+}
+
+function visibleMsgs(){
+  let rows=EMAILS.slice();
+  if(state.dir!=='all') rows=rows.filter(m=>m.direction===state.dir);
+  const q=state.q.trim().toLowerCase();
+  if(q) rows=rows.filter(m=>(m.subject+' '+people(m.to)+' '+people(m.cc)+' '+nm(m.from)+' '+
+      (m.bodyNew||'').replace(/<[^>]+>/g,' ')+' '+(ann.notes[m.id]||'')).toLowerCase().includes(q));
+  if(!state.showRemoved) rows=rows.filter(m=>!ann.removed[m.id]);
+  rows.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  if(!state.asc) rows=rows.reverse();
+  return rows;
+}
+
+function render(){
+  const list=document.getElementById('list'); list.innerHTML='';
+  const rows=visibleMsgs();
+  document.getElementById('count').textContent=`מציג ${rows.length} מתוך ${EMAILS.length} הודעות`+
+    (Object.keys(ann.removed).length?` · ${Object.keys(ann.removed).length} הוסרו`:'');
+  if(!rows.length){list.innerHTML='<div class="empty">לא נמצאו הודעות.</div>';return;}
+
+  if(state.view==='thread'){
+    const groups={};
+    rows.forEach(m=>{(groups[m.threadId]=groups[m.threadId]||[]).push(m);});
+    const ids=Object.keys(groups).sort((a,b)=>{
+      const da=groups[a][0].date, db=groups[b][0].date; return state.asc?(da<db?-1:1):(da>db?-1:1);});
+    ids.forEach(tid=>{
+      const g=groups[tid].slice().sort((a,b)=>a.date<b.date?-1:1);
+      const h=document.createElement('div'); h.className='threadhead';
+      h.textContent='🧵 '+g[0].subject+'  ('+g.length+' הודעות)'; list.appendChild(h);
+      g.forEach(m=>list.appendChild(renderCard(m)));
+    });
+  } else if(state.view==='month'){
+    let last='';
+    rows.forEach(m=>{
+      if(m.month!==last){const s=document.createElement('div');s.className='sep';
+        s.innerHTML='<span>'+esc(fmtMonth.format(new Date(m.date)))+'</span>';list.appendChild(s);last=m.month;}
+      list.appendChild(renderCard(m));
+    });
+  } else {
+    rows.forEach(m=>list.appendChild(renderCard(m)));
+  }
+}
+
+function updateStats(){
+  const sent=EMAILS.filter(m=>m.direction==='sent').length;
+  const recv=EMAILS.length-sent;
+  const att=EMAILS.reduce((s,m)=>s+(m.attachments||[]).filter(a=>!a.isInline).length,0);
+  const th=new Set(EMAILS.map(m=>m.threadId)).size;
+  const dates=EMAILS.map(m=>m.date).filter(Boolean).sort();
+  const range=dates.length?`${fmtDay.format(new Date(dates[0]))} – ${fmtDay.format(new Date(dates.at(-1)))}`:'';
+  const rm=Object.keys(ann.removed).length;
+  document.getElementById('stats').innerHTML=
+    `<div class="stat"><b>${EMAILS.length}</b> הודעות</div>`+
+    `<div class="stat" style="color:var(--sent)"><b>${sent}</b> שלי</div>`+
+    `<div class="stat" style="color:var(--recv)"><b>${recv}</b> שהתקבלו</div>`+
+    `<div class="stat"><b>${th}</b> שרשורים</div>`+
+    `<div class="stat"><b>${att}</b> קבצים</div>`+
+    (rm?`<div class="stat" style="color:#c0392b"><b>${rm}</b> הוסרו</div>`:'')+
+    (range?`<div class="stat">${range}</div>`:'');
+}
+
+// controls
+document.getElementById('q').addEventListener('input',e=>{state.q=e.target.value;render();});
+document.getElementById('dir').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  state.dir=b.dataset.d;document.querySelectorAll('#dir button').forEach(x=>x.classList.toggle('active',x===b));render();});
+document.getElementById('view').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  state.view=b.dataset.v;document.querySelectorAll('#view button').forEach(x=>x.classList.toggle('active',x===b));render();});
+document.getElementById('sortBtn').addEventListener('click',e=>{state.asc=!state.asc;
+  e.target.textContent=state.asc?'⌃ הישן→חדש':'⌄ החדש→ישן';render();});
+document.getElementById('focusBtn').addEventListener('click',e=>{state.focus=!state.focus;
+  document.body.classList.toggle('focus',state.focus);e.target.classList.toggle('on',state.focus);});
+document.getElementById('removedBtn').addEventListener('click',e=>{state.showRemoved=!state.showRemoved;
+  document.body.classList.toggle('show-removed',state.showRemoved);e.target.classList.toggle('on',state.showRemoved);
+  e.target.textContent=state.showRemoved?'👁 מסתיר שהוסרו':'👁 הצג שהוסרו';render();});
+document.getElementById('printBtn').addEventListener('click',()=>window.print());
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  const blob=new Blob([JSON.stringify(ann,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='קריספין-הערות-'+new Date().toISOString().slice(0,10)+'.json';a.click();});
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);
+    ann.notes=Object.assign(ann.notes,d.notes||{});
+    ann.highlights=Object.assign(ann.highlights,d.highlights||{});
+    ann.removed=Object.assign(ann.removed,d.removed||{});
+    save();updateStats();render();alert('הגיבוי נטען בהצלחה.');}catch(err){alert('קובץ לא תקין.');}};
+  r.readAsText(f);});
+
+updateStats();
+render();
+</script>
+</body>
+</html>
