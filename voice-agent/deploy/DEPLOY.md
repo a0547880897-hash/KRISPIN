@@ -27,7 +27,8 @@ This deploys the new **Bank Yahav sales agent** WITHOUT touching the existing
    operator, never shared in chat:
    ```
    OPENAI_API_KEY=<new OpenAI key>
-   OPENAI_REALTIME_MODEL=gpt-realtime
+   OPENAI_REALTIME_MODEL=gpt-realtime-2
+   REASONING_EFFORT=high
    OPENAI_SUMMARY_MODEL=gpt-4o-mini
    AGENT_VOICE=shimmer
    PORT=3340

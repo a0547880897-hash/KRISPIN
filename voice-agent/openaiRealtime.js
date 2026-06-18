@@ -16,19 +16,30 @@
 const WebSocket = require('ws');
 const { PERSONA_INSTRUCTIONS } = require('./persona');
 
-const REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime';
+const REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-2';
 const AGENT_VOICE = process.env.AGENT_VOICE || 'shimmer';
+// gpt-realtime-2 reasoning intensity: minimal | low | medium | high | xhigh.
+// 'high' = smart+flowing for a sales agent; drop to 'medium' if replies feel slow.
+const REASONING_EFFORT = process.env.REASONING_EFFORT || 'high';
 
 /**
  * Build the session.update payload (GA shape). Audio is g711 u-law (PCMU) in both
  * directions to bridge Twilio Media Streams without transcoding.
  */
+// Reasoning effort is only valid on reasoning realtime models (gpt-realtime-2+).
+// Sending it to a non-reasoning model would error, so gate on the model name.
+const SUPPORTS_REASONING = /realtime-[2-9]/.test(REALTIME_MODEL);
+
 function buildSessionConfig() {
   return {
     type: 'session.update',
     session: {
       type: 'realtime',
       instructions: PERSONA_INSTRUCTIONS,
+      // Session-level reasoning control (no `temperature` for reasoning models).
+      ...(SUPPORTS_REASONING && REASONING_EFFORT
+        ? { reasoning: { effort: REASONING_EFFORT } }
+        : {}),
       audio: {
         input: {
           format: { type: 'audio/pcmu' },
@@ -69,7 +80,7 @@ function connectOpenAI() {
   });
 
   ws.on('open', () => {
-    console.log(`[openai] connected (model=${REALTIME_MODEL}); sending session.update`);
+    console.log(`[openai] connected (model=${REALTIME_MODEL}, reasoning=${REASONING_EFFORT}); sending session.update`);
     ws.send(JSON.stringify(buildSessionConfig()));
   });
 
