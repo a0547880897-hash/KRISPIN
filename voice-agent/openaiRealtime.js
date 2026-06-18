@@ -56,7 +56,9 @@ function buildSessionConfig() {
             prefix_padding_ms: VAD_PREFIX_MS,
             silence_duration_ms: VAD_SILENCE_MS,
             create_response: true,
-            interrupt_response: true,
+            // OFF on purpose: we confirm barge-in ourselves (debounced) in
+            // conversation.js so line echo can't make the agent cut itself off.
+            interrupt_response: false,
           },
           transcription: { model: 'whisper-1' },
         },

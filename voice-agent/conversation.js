@@ -6,7 +6,19 @@
  *
  * These mechanisms live in server code (not the prompt). The VAD tuning is sent
  * in the session config (openaiRealtime.js); here we react to the events it emits.
+ *
+ * ECHO-RESISTANT BARGE-IN: telephone lines can echo the agent's own voice back
+ * into the input, which the VAD reports as `speech_started` — if we interrupt on
+ * that instantly, the agent cuts itself off and loops. So we DON'T let the server
+ * auto-interrupt (interrupt_response:false in the session) and instead confirm a
+ * barge-in ourselves: only interrupt if speech is SUSTAINED past a short window.
+ * Echo blips end quickly (speech_stopped before the window) and are ignored;
+ * real caller speech persists and triggers the interrupt. Barge-in still works.
  */
+
+// How long caller speech must persist before we treat it as a real interruption
+// (ms). Higher = more echo-proof but slightly slower barge-in. Tunable live.
+const BARGE_IN_CONFIRM_MS = parseInt(process.env.BARGE_IN_CONFIRM_MS || '350', 10);
 
 const GREETING_INSTRUCTIONS =
   'אמרי בחום, בקצב טבעי ובאינטונציה אנושית (לא מונוטונית), בדיוק: "היי! אני תגל מבנק יהב — מה השם שלך?" משפט אחד בלבד, ואז עצרי והקשיבי. הגי את שמך "תגל" כמו "TAGEL" באנגלית (ההטעמה על GEL) — לא "תאגל". בלי לדקלם, בלי "מצוין".';
@@ -22,6 +34,8 @@ function createConversation({ openaiWs, twilioWs }) {
     streamSid: null,
     greetingSent: false,
     openaiReady: false,
+    agentSpeaking: false, // is the agent currently producing audio?
+    bargeInTimer: null, // pending "confirm real interruption" timer
     transcript: [], // [{ role: 'user'|'assistant', text }]
   };
 
@@ -56,6 +70,25 @@ function createConversation({ openaiWs, twilioWs }) {
     );
   }
 
+  function cancelBargeInTimer() {
+    if (state.bargeInTimer) {
+      clearTimeout(state.bargeInTimer);
+      state.bargeInTimer = null;
+    }
+  }
+
+  // Confirmed interruption: stop the agent and flush already-queued audio.
+  function performBargeIn() {
+    if (openaiWs.readyState === openaiWs.OPEN) {
+      openaiWs.send(JSON.stringify({ type: 'response.cancel' }));
+    }
+    if (state.streamSid && twilioWs.readyState === twilioWs.OPEN) {
+      twilioWs.send(JSON.stringify({ event: 'clear', streamSid: state.streamSid }));
+    }
+    state.agentSpeaking = false;
+    console.log('[conv] barge-in confirmed -> agent stopped');
+  }
+
   // Handle every event coming from OpenAI.
   function handleOpenAiEvent(raw) {
     let event;
@@ -75,6 +108,7 @@ function createConversation({ openaiWs, twilioWs }) {
       // GA: response.output_audio.delta  (beta name kept as fallback)
       case 'response.output_audio.delta':
       case 'response.audio.delta':
+        state.agentSpeaking = true;
         if (event.delta && state.streamSid && twilioWs.readyState === twilioWs.OPEN) {
           twilioWs.send(
             JSON.stringify({
@@ -86,18 +120,30 @@ function createConversation({ openaiWs, twilioWs }) {
         }
         break;
 
-      // BARGE-IN: caller started talking while agent was talking. (spec §7.2)
-      // 1) cancel the agent's in-flight response on OpenAI
-      // 2) clear audio already queued to Twilio but not yet played
+      // Agent finished a response naturally.
+      case 'response.done':
+      case 'response.output_audio.done':
+      case 'response.audio.done':
+        state.agentSpeaking = false;
+        cancelBargeInTimer();
+        break;
+
+      // BARGE-IN onset (spec §7.2): caller speech detected. Don't interrupt
+      // immediately (could be line echo of the agent). Only arm a confirm timer
+      // while the agent is actually speaking; if speech persists past the window
+      // it's a real interruption. (interrupt_response is OFF in the session.)
       case 'input_audio_buffer.speech_started':
-        if (openaiWs.readyState === openaiWs.OPEN) {
-          openaiWs.send(JSON.stringify({ type: 'response.cancel' }));
+        if (state.agentSpeaking && !state.bargeInTimer) {
+          state.bargeInTimer = setTimeout(() => {
+            state.bargeInTimer = null;
+            performBargeIn();
+          }, BARGE_IN_CONFIRM_MS);
         }
-        if (state.streamSid && twilioWs.readyState === twilioWs.OPEN) {
-          twilioWs.send(
-            JSON.stringify({ event: 'clear', streamSid: state.streamSid })
-          );
-        }
+        break;
+
+      // Speech ended before the confirm window -> it was a blip/echo. Ignore.
+      case 'input_audio_buffer.speech_stopped':
+        cancelBargeInTimer();
         break;
 
       // Transcript collection (spec §9) — caller side.
