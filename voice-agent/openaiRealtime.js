@@ -31,11 +31,16 @@ const REASONING_EFFORT = process.env.REASONING_EFFORT || 'high';
 const SUPPORTS_REASONING = /realtime-[2-9]/.test(REALTIME_MODEL);
 
 // VAD tuning — env-configurable so it can be dialed in live (restart only, no
-// redeploy). Higher threshold = less sensitive (rejects line echo / the agent
-// hearing itself, which otherwise causes a self-interruption loop).
-const VAD_THRESHOLD = parseFloat(process.env.VAD_THRESHOLD || '0.8');
-const VAD_SILENCE_MS = parseInt(process.env.VAD_SILENCE_MS || '800', 10);
+// redeploy). threshold 0.6 = balanced (detects interruptions without catching
+// breaths). Echo is filtered by the debounced barge-in in conversation.js, NOT
+// by a high threshold (a high threshold also kills real barge-in).
+const VAD_THRESHOLD = parseFloat(process.env.VAD_THRESHOLD || '0.6');
+const VAD_SILENCE_MS = parseInt(process.env.VAD_SILENCE_MS || '700', 10);
 const VAD_PREFIX_MS = parseInt(process.env.VAD_PREFIX_MS || '300', 10);
+// Barge-in mode. Default false: WE confirm interruptions (debounced) so line
+// echo can't make the agent cut itself off. Set true to let the server cancel
+// on the first detected speech (snappier, but echo can self-interrupt).
+const INTERRUPT_RESPONSE = (process.env.INTERRUPT_RESPONSE || 'false').toLowerCase() === 'true';
 
 function buildSessionConfig() {
   return {
@@ -56,9 +61,7 @@ function buildSessionConfig() {
             prefix_padding_ms: VAD_PREFIX_MS,
             silence_duration_ms: VAD_SILENCE_MS,
             create_response: true,
-            // OFF on purpose: we confirm barge-in ourselves (debounced) in
-            // conversation.js so line echo can't make the agent cut itself off.
-            interrupt_response: false,
+            interrupt_response: INTERRUPT_RESPONSE,
           },
           transcription: { model: 'whisper-1' },
         },
@@ -90,7 +93,7 @@ function connectOpenAI() {
 
   ws.on('open', () => {
     const reasoningLabel = SUPPORTS_REASONING && REASONING_EFFORT ? REASONING_EFFORT : 'off (model has no reasoning)';
-    console.log(`[openai] connected (model=${REALTIME_MODEL}, reasoning=${reasoningLabel}, vad threshold=${VAD_THRESHOLD} silence=${VAD_SILENCE_MS}ms); sending session.update`);
+    console.log(`[openai] connected (model=${REALTIME_MODEL}, reasoning=${reasoningLabel}, vad threshold=${VAD_THRESHOLD} silence=${VAD_SILENCE_MS}ms, interrupt_response=${INTERRUPT_RESPONSE}); sending session.update`);
     ws.send(JSON.stringify(buildSessionConfig()));
   });
 

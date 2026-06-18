@@ -19,9 +19,12 @@
 // How long caller speech must persist before we treat it as a real interruption
 // (ms). Higher = more echo-proof but slightly slower barge-in. Tunable live.
 const BARGE_IN_CONFIRM_MS = parseInt(process.env.BARGE_IN_CONFIRM_MS || '350', 10);
+// Mirrors the session setting: if the server interrupts on its own, we skip our
+// debounced manual cancel (just flush Twilio's queued audio on speech_started).
+const SERVER_INTERRUPTS = (process.env.INTERRUPT_RESPONSE || 'false').toLowerCase() === 'true';
 
 const GREETING_INSTRUCTIONS =
-  'אמרי בחום, בקצב טבעי ובאינטונציה אנושית (לא מונוטונית), בדיוק: "היי! אני תגל מבנק יהב — מה השם שלך?" משפט אחד בלבד, ואז עצרי והקשיבי. הגי את שמך "תגל" כמו "TAGEL" באנגלית (ההטעמה על GEL) — לא "תאגל". בלי לדקלם, בלי "מצוין".';
+  'אמרי בחום, בקצב טבעי ובאינטונציה אנושית (לא מונוטונית), בדיוק: "היי, אני תגל מבנק יהב. אני לא נציגה אנושית — אבל אני כן יכולה לדאוג לך לעד 150 אלף שקל שייכנסו אליך מחר לחשבון, ובנוסף חשבון בלי עמלות עובר ושב. שניתן לזה צ\'אנס?" ואז עצרי והקשיבי. הגי את שמך "תגל" כמו "TAGEL" באנגלית (ההטעמה על GEL) — לא "תאגל". בלי לדקלם, בלי "מצוין".';
 
 /**
  * Create a per-call conversation controller.
@@ -128,12 +131,17 @@ function createConversation({ openaiWs, twilioWs }) {
         cancelBargeInTimer();
         break;
 
-      // BARGE-IN onset (spec §7.2): caller speech detected. Don't interrupt
-      // immediately (could be line echo of the agent). Only arm a confirm timer
-      // while the agent is actually speaking; if speech persists past the window
-      // it's a real interruption. (interrupt_response is OFF in the session.)
+      // BARGE-IN onset (spec §7.2): caller speech detected.
       case 'input_audio_buffer.speech_started':
-        if (state.agentSpeaking && !state.bargeInTimer) {
+        if (SERVER_INTERRUPTS) {
+          // Server already cancels the response; just flush Twilio's queued audio.
+          if (state.agentSpeaking && state.streamSid && twilioWs.readyState === twilioWs.OPEN) {
+            twilioWs.send(JSON.stringify({ event: 'clear', streamSid: state.streamSid }));
+            state.agentSpeaking = false;
+          }
+        } else if (state.agentSpeaking && !state.bargeInTimer) {
+          // Debounced: don't interrupt immediately (could be line echo). Only
+          // act if speech persists past the confirm window (real interruption).
           state.bargeInTimer = setTimeout(() => {
             state.bargeInTimer = null;
             performBargeIn();
