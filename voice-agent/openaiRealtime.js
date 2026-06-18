@@ -80,7 +80,8 @@ function connectOpenAI() {
   });
 
   ws.on('open', () => {
-    console.log(`[openai] connected (model=${REALTIME_MODEL}, reasoning=${REASONING_EFFORT}); sending session.update`);
+    const reasoningLabel = SUPPORTS_REASONING && REASONING_EFFORT ? REASONING_EFFORT : 'off (model has no reasoning)';
+    console.log(`[openai] connected (model=${REALTIME_MODEL}, reasoning=${reasoningLabel}); sending session.update`);
     ws.send(JSON.stringify(buildSessionConfig()));
   });
 
