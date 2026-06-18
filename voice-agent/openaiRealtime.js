@@ -30,6 +30,13 @@ const REASONING_EFFORT = process.env.REASONING_EFFORT || 'high';
 // Sending it to a non-reasoning model would error, so gate on the model name.
 const SUPPORTS_REASONING = /realtime-[2-9]/.test(REALTIME_MODEL);
 
+// VAD tuning — env-configurable so it can be dialed in live (restart only, no
+// redeploy). Higher threshold = less sensitive (rejects line echo / the agent
+// hearing itself, which otherwise causes a self-interruption loop).
+const VAD_THRESHOLD = parseFloat(process.env.VAD_THRESHOLD || '0.8');
+const VAD_SILENCE_MS = parseInt(process.env.VAD_SILENCE_MS || '800', 10);
+const VAD_PREFIX_MS = parseInt(process.env.VAD_PREFIX_MS || '300', 10);
+
 function buildSessionConfig() {
   return {
     type: 'session.update',
@@ -45,9 +52,9 @@ function buildSessionConfig() {
           format: { type: 'audio/pcmu' },
           turn_detection: {
             type: 'server_vad',
-            threshold: 0.6,
-            prefix_padding_ms: 300,
-            silence_duration_ms: 700,
+            threshold: VAD_THRESHOLD,
+            prefix_padding_ms: VAD_PREFIX_MS,
+            silence_duration_ms: VAD_SILENCE_MS,
             create_response: true,
             interrupt_response: true,
           },
@@ -81,7 +88,7 @@ function connectOpenAI() {
 
   ws.on('open', () => {
     const reasoningLabel = SUPPORTS_REASONING && REASONING_EFFORT ? REASONING_EFFORT : 'off (model has no reasoning)';
-    console.log(`[openai] connected (model=${REALTIME_MODEL}, reasoning=${reasoningLabel}); sending session.update`);
+    console.log(`[openai] connected (model=${REALTIME_MODEL}, reasoning=${reasoningLabel}, vad threshold=${VAD_THRESHOLD} silence=${VAD_SILENCE_MS}ms); sending session.update`);
     ws.send(JSON.stringify(buildSessionConfig()));
   });
 
