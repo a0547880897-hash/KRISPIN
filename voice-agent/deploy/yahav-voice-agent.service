@@ -1,0 +1,18 @@
+[Unit]
+Description=Yahav Voice Sales Agent (Twilio <-> OpenAI Realtime)
+After=network.target
+
+[Service]
+Type=simple
+# The app uses dotenv and loads .env from this directory.
+WorkingDirectory=/opt/yahav/voice-agent
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+User=root
+# Keep stdout/stderr in the journal: journalctl -u yahav-voice-agent -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+    # ===== Yahav voice sales agent (added — routes /yahav/ to the Node app) =====
+    # Paste this block INSIDE the existing `server { listen 443 ssl; ... }` block
+    # for server_name 167-172-182-173.sslip.io . It does NOT touch the existing
+    # `location / -> 127.0.0.1:8080` routing.
+    location /yahav/ {
+        proxy_pass http://127.0.0.1:3340/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;       # WebSocket (Twilio Media Stream)
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 3600s;                      # keep the call WS open
+        proxy_send_timeout 3600s;
+    }

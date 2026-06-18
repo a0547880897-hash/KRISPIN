@@ -14,6 +14,10 @@ const { handleTwilioConnection } = require('./twilioHandler');
 
 const PORT = process.env.PORT || 3340;
 const PUBLIC_HOSTNAME = process.env.PUBLIC_HOSTNAME || '';
+// Public path prefix when served behind a reverse proxy on a shared domain,
+// e.g. nginx `location /yahav/ -> 127.0.0.1:3340/`. Leave empty if served at root.
+// Must start with "/" and have NO trailing slash (e.g. "/yahav").
+const PUBLIC_PATH_PREFIX = (process.env.PUBLIC_PATH_PREFIX || '').replace(/\/$/, '');
 const STREAM_PATH = '/media-stream';
 
 const app = express();
@@ -33,7 +37,8 @@ function twimlHandler(req, res) {
   const from = (req.body && (req.body.From || req.body.from)) || '';
   // Prefer configured public host; fall back to the request's Host header.
   const host = PUBLIC_HOSTNAME || req.headers.host;
-  const streamUrl = `wss://${host}${STREAM_PATH}`;
+  // Include the public path prefix so the proxy routes the WS to this app.
+  const streamUrl = `wss://${host}${PUBLIC_PATH_PREFIX}${STREAM_PATH}`;
 
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -64,8 +69,8 @@ wss.on('connection', (ws) => handleTwilioConnection(ws));
 
 server.listen(PORT, () => {
   console.log(`[server] listening on :${PORT}`);
-  console.log(`[server] voice webhook:  POST /voice/webhook`);
-  console.log(`[server] media stream:   wss://${PUBLIC_HOSTNAME || '<host>'}${STREAM_PATH}`);
+  console.log(`[server] voice webhook:  POST /voice/webhook  (public: ${PUBLIC_PATH_PREFIX}/voice/webhook)`);
+  console.log(`[server] media stream:   wss://${PUBLIC_HOSTNAME || '<host>'}${PUBLIC_PATH_PREFIX}${STREAM_PATH}`);
   if (!PUBLIC_HOSTNAME) {
     console.warn('[server] PUBLIC_HOSTNAME not set — Media Stream URL will use the request Host header. Set it for production.');
   }
