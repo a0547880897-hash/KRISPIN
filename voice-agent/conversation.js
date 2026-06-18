@@ -72,6 +72,8 @@ function createConversation({ openaiWs, twilioWs }) {
         break;
 
       // Agent audio -> Twilio, immediately, no buffering. (spec §7.4)
+      // GA: response.output_audio.delta  (beta name kept as fallback)
+      case 'response.output_audio.delta':
       case 'response.audio.delta':
         if (event.delta && state.streamSid && twilioWs.readyState === twilioWs.OPEN) {
           twilioWs.send(
@@ -106,6 +108,8 @@ function createConversation({ openaiWs, twilioWs }) {
         break;
 
       // Transcript collection — agent side.
+      // GA: response.output_audio_transcript.done  (beta name kept as fallback)
+      case 'response.output_audio_transcript.done':
       case 'response.audio_transcript.done':
         if (event.transcript) {
           state.transcript.push({ role: 'assistant', text: event.transcript.trim() });

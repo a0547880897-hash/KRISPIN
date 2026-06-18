@@ -1,43 +1,52 @@
 /**
  * openaiRealtime.js
  * -----------------
- * Opens and configures the WebSocket connection to the OpenAI Realtime API.
+ * Opens and configures the WebSocket connection to the OpenAI Realtime API (GA).
  *
- * NOTE (verify at deploy time — these change):
- *  - Model name: OPENAI_REALTIME_MODEL (beta: gpt-4o-realtime-preview, GA: gpt-realtime).
- *  - Event names (input_audio_buffer.speech_started, response.audio.delta, ...)
- *    must match the API version you target. See spec §12.
+ * GA notes (post-beta, the beta `realtime=v1` interface was removed 2026-05-12):
+ *  - No `OpenAI-Beta` header.
+ *  - session.update uses `session.type: "realtime"` and nests audio config under
+ *    `session.audio.input` / `session.audio.output`.
+ *  - For telephony (Twilio g711 u-law / mulaw 8kHz) the audio format is the object
+ *    `{ type: "audio/pcmu" }`.
+ *  - Model name is configurable; current GA models: gpt-realtime, gpt-realtime-1.5,
+ *    gpt-realtime-2, gpt-realtime-mini.
  */
 
 const WebSocket = require('ws');
 const { PERSONA_INSTRUCTIONS } = require('./persona');
 
-const REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview';
+const REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime';
 const AGENT_VOICE = process.env.AGENT_VOICE || 'shimmer';
 
 /**
- * Build the session.update payload. Audio is g711_ulaw in both directions —
- * required to bridge Twilio Media Streams without transcoding.
+ * Build the session.update payload (GA shape). Audio is g711 u-law (PCMU) in both
+ * directions to bridge Twilio Media Streams without transcoding.
  */
 function buildSessionConfig() {
   return {
     type: 'session.update',
     session: {
-      modalities: ['audio', 'text'],
+      type: 'realtime',
       instructions: PERSONA_INSTRUCTIONS,
-      voice: AGENT_VOICE,
-      input_audio_format: 'g711_ulaw',
-      output_audio_format: 'g711_ulaw',
-      input_audio_transcription: { model: 'whisper-1' },
-      turn_detection: {
-        type: 'server_vad',
-        threshold: 0.6,
-        prefix_padding_ms: 300,
-        silence_duration_ms: 700,
-        create_response: true,
-        interrupt_response: true,
+      audio: {
+        input: {
+          format: { type: 'audio/pcmu' },
+          turn_detection: {
+            type: 'server_vad',
+            threshold: 0.6,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 700,
+            create_response: true,
+            interrupt_response: true,
+          },
+          transcription: { model: 'whisper-1' },
+        },
+        output: {
+          format: { type: 'audio/pcmu' },
+          voice: AGENT_VOICE,
+        },
       },
-      temperature: 0.7,
     },
   };
 }
@@ -56,7 +65,6 @@ function connectOpenAI() {
   const ws = new WebSocket(url, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      'OpenAI-Beta': 'realtime=v1',
     },
   });
 

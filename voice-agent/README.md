@@ -59,7 +59,7 @@ https://myaccount.google.com/apppasswords — והזן ל‑`GMAIL_APP_PASSWORD`
 
 ## נקודות לאימות בזמן פריסה (spec §12)
 
-1. **שם המודל** של Realtime מתעדכן — `OPENAI_REALTIME_MODEL` (beta: `gpt-4o-realtime-preview`, GA: `gpt-realtime`).
+1. **שם המודל** של Realtime מתעדכן — `OPENAI_REALTIME_MODEL` (GA: `gpt-realtime` / `gpt-realtime-1.5` / `gpt-realtime-2`; ה‑beta + `gpt-4o-realtime-preview` הוסרו ב‑12/05/2026).
 2. **שמות אירועי ה‑WebSocket** של OpenAI Realtime — ודא מול התיעוד הנוכחי.
 3. **פורמט האודיו** של Twilio — base64 mu‑law (`g711_ulaw`) בשני הכיוונים.
 4. **מבנה הודעות Twilio** — `start` / `media` / `stop` והשדה `streamSid`.
