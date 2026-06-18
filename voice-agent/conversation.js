@@ -19,9 +19,10 @@
 // How long caller speech must persist before we treat it as a real interruption
 // (ms). Higher = more echo-proof but slightly slower barge-in. Tunable live.
 const BARGE_IN_CONFIRM_MS = parseInt(process.env.BARGE_IN_CONFIRM_MS || '350', 10);
-// Mirrors the session setting: if the server interrupts on its own, we skip our
-// debounced manual cancel (just flush Twilio's queued audio on speech_started).
-const SERVER_INTERRUPTS = (process.env.INTERRUPT_RESPONSE || 'false').toLowerCase() === 'true';
+// Mirrors the session setting: if the server interrupts on its own (recommended),
+// we skip our debounced manual cancel (just flush Twilio's queued audio on
+// speech_started). Default true.
+const SERVER_INTERRUPTS = (process.env.INTERRUPT_RESPONSE || 'true').toLowerCase() === 'true';
 
 const GREETING_INSTRUCTIONS =
   'אמרי בחום, בקצב טבעי ובאינטונציה אנושית (לא מונוטונית), בדיוק: "היי, אני תגל מבנק יהב. אני לא נציגה אנושית — אבל אני כן יכולה לדאוג לך לעד 150 אלף שקל שייכנסו אליך מחר לחשבון, ובנוסף חשבון בלי עמלות עובר ושב. שניתן לזה צ\'אנס?" ואז עצרי והקשיבי. הגי את שמך "תגל" כמו "TAGEL" באנגלית (ההטעמה על GEL) — לא "תאגל". בלי לדקלם, בלי "מצוין".';

@@ -37,10 +37,11 @@ const SUPPORTS_REASONING = /realtime-[2-9]/.test(REALTIME_MODEL);
 const VAD_THRESHOLD = parseFloat(process.env.VAD_THRESHOLD || '0.6');
 const VAD_SILENCE_MS = parseInt(process.env.VAD_SILENCE_MS || '700', 10);
 const VAD_PREFIX_MS = parseInt(process.env.VAD_PREFIX_MS || '300', 10);
-// Barge-in mode. Default false: WE confirm interruptions (debounced) so line
-// echo can't make the agent cut itself off. Set true to let the server cancel
-// on the first detected speech (snappier, but echo can self-interrupt).
-const INTERRUPT_RESPONSE = (process.env.INTERRUPT_RESPONSE || 'false').toLowerCase() === 'true';
+// Barge-in mode. Default true (recommended): the server cancels the in-progress
+// response the moment real caller speech is detected, and we just flush Twilio's
+// queued audio (no manual double-cancel). This gives clean turn-taking with no
+// response pile-up. Set false only to use the debounced manual mode.
+const INTERRUPT_RESPONSE = (process.env.INTERRUPT_RESPONSE || 'true').toLowerCase() === 'true';
 
 function buildSessionConfig() {
   return {
