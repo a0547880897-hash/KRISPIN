@@ -99,6 +99,27 @@
   .act:hover{border-color:var(--sent);color:var(--sent)}
   .act.danger:hover{border-color:#c0392b;color:#c0392b}
 
+  /* tags */
+  .tagrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:9px}
+  .tagrow-lbl{font-size:12.5px;color:var(--muted);font-weight:600}
+  .filt-lbl{margin-inline-start:12px}
+  .tsel,.tagpick{font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:9px;
+    padding:7px 10px;background:#fff;color:var(--ink);box-shadow:var(--shadow);max-width:240px}
+  .tagbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .tagbar:empty{display:none}
+  .tf{font:inherit;font-size:11.5px;border:1.5px solid var(--tc);color:var(--tc);background:#fff;
+    border-radius:20px;padding:3px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .tf .tfn{background:var(--tc);color:#fff;border-radius:20px;font-size:10px;min-width:16px;text-align:center;padding:0 4px}
+  .tf.on{background:var(--tc);color:#fff}
+  .tf.on .tfn{background:#fff;color:var(--tc)}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 16px 2px}
+  .tg{display:inline-flex;align-items:center;gap:5px;color:#fff;font-size:11.5px;font-weight:600;
+    border-radius:20px;padding:3px 6px 3px 10px}
+  .tg .tgx{border:0;background:rgba(255,255,255,.3);color:#fff;border-radius:50%;width:16px;height:16px;
+    line-height:14px;cursor:pointer;font-size:12px;padding:0}
+  .tg .tgx:hover{background:rgba(0,0,0,.25)}
+  .tagpick{padding:4px 8px;font-size:12px;box-shadow:none;max-width:170px}
+
   /* focus mode: fade everything except yellow highlights */
   body.focus .email-body, body.focus .email-body *{color:rgba(20,24,32,.18)!important}
   body.focus .email-body img{opacity:.2}
@@ -109,7 +130,7 @@
   footer{color:var(--muted);font-size:12px;text-align:center;margin:30px 0 40px}
 
   @media print{
-    header.top, .actions, .seg, .search, .btn, .count, .stats, .saved{display:none!important}
+    header.top, .actions, .seg, .search, .btn, .count, .stats, .saved, .tagpick{display:none!important}
     body{background:#fff}
     .card{break-inside:avoid;box-shadow:none;border:1px solid #ccc;margin:8px 0}
     .note{break-inside:avoid}
@@ -149,6 +170,14 @@
       <input id="importFile" type="file" accept="application/json" style="display:none">
       <span class="saved" id="saved">נשמר ✓</span>
     </div>
+    <div class="tagrow">
+      <span class="tagrow-lbl">🏷️ תייג נבחרים:</span>
+      <select id="bulkTag" class="tsel"></select>
+      <button class="btn" id="bulkTagBtn">החל על המסומנים</button>
+      <span class="tagrow-lbl filt-lbl">סינון לפי תגית ↓</span>
+      <button class="btn" id="clearTagFilter">נקה סינון</button>
+    </div>
+    <div class="tagbar" id="tagbar"></div>
     <div class="count" id="count"></div>
   </div>
 </header>
@@ -172,14 +201,37 @@ function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>'
 function nm(p){return (p&&(p.name||p.address))||'';}
 function people(list){return (list||[]).map(nm).filter(Boolean).join(', ');}
 
-let ann = {notes:{},highlights:{},removed:{},selected:{}};
+let ann = {notes:{},highlights:{},removed:{},selected:{},tags:{},customTags:[]};
 try{const s=localStorage.getItem(LS_KEY); if(s) ann=Object.assign(ann,JSON.parse(s));}catch(e){}
 if(!ann.selected) ann.selected={};
+if(!ann.tags) ann.tags={};
+if(!ann.customTags) ann.customTags=[];
 function save(){ try{localStorage.setItem(LS_KEY,JSON.stringify(ann)); flash();}catch(e){} }
 let st;
 function flash(){const el=document.getElementById('saved');el.classList.add('show');clearTimeout(st);st=setTimeout(()=>el.classList.remove('show'),1200);}
 
-const state={dir:'all',view:'flat',q:'',asc:true,focus:false,showRemoved:false,full:new Set()};
+const TAGS_DEFAULT=[
+  "סירוב ללא נימוק (כבר ב‑2023)",
+  "סירוב להצעות הסדר",
+  "סירוב להצעה אטרקטיבית",
+  "סירוב להחריג את שכר הטרחה",
+  "הבטחות שלא קוימו",
+  "תשובות שלא נענו לפירוט",
+  "הסלמה בזמן הסדר",
+  "ניצול מצבו ואי עדכון הרשם",
+  "זקיפת שכר טרחה",
+  "עוד 1",
+  "עוד 2",
+];
+const TAG_COLORS=["#c0392b","#d35400","#b7791f","#0e7c5a","#1e6fb8","#6d28d9","#9b1c5b","#0f766e","#7c2d12","#3730a3","#475569","#a16207","#155e75","#831843"];
+function allTags(){return TAGS_DEFAULT.concat(ann.customTags.filter(t=>!TAGS_DEFAULT.includes(t)));}
+function tagColor(t){const i=allTags().indexOf(t);return TAG_COLORS[(i<0?0:i)%TAG_COLORS.length];}
+function tagsOf(id){return ann.tags[id]||[];}
+function addTagTo(id,t){t=(t||'').trim();if(!t)return;ann.tags[id]=ann.tags[id]||[];
+  if(!ann.tags[id].includes(t))ann.tags[id].push(t);}
+function removeTagFrom(id,t){ann.tags[id]=(ann.tags[id]||[]).filter(x=>x!==t);if(!ann.tags[id].length)delete ann.tags[id];}
+
+const state={dir:'all',view:'flat',q:'',asc:true,focus:false,showRemoved:false,full:new Set(),tags:new Set()};
 
 function applyHighlights(container, snippets){
   (snippets||[]).forEach(snip=>{
@@ -246,6 +298,15 @@ function attHTML(m){
   return h+`</div>`;
 }
 
+function tagsHTML(m){
+  const ts=tagsOf(m.id);
+  const chips=ts.map(t=>`<span class="tg" style="background:${tagColor(t)}">${esc(t)}<button class="tgx" data-tag="${esc(t)}" title="הסר תגית">×</button></span>`).join('');
+  const opts=['<option value="">➕ הוסף תגית…</option>']
+    .concat(allTags().map(t=>`<option value="${esc(t)}">${esc(t)}</option>`))
+    .concat(['<option value="__custom__">➕ תגית חדשה…</option>']).join('');
+  return `<div class="tags">${chips}<select class="tagpick">${opts}</select></div>`;
+}
+
 function renderCard(m){
   const card=document.createElement('div');
   card.className='card '+m.direction+(ann.removed[m.id]?' removed':'');
@@ -255,6 +316,7 @@ function renderCard(m){
   card.innerHTML=legalHTML(m)
     +`<div class="body-wrap"><div class="email-body">${bodyHtml}</div></div>`
     +attHTML(m)
+    +tagsHTML(m)
     +`<textarea class="note" placeholder="הערה משפטית להודעה זו…">${esc(ann.notes[m.id]||'')}</textarea>`
     +`<div class="actions">
         <button class="act" data-a="hl">🖍️ הדגש בחירה</button>
@@ -277,6 +339,16 @@ function renderCard(m){
   });
   // notes
   card.querySelector('.note').addEventListener('input',e=>{ann.notes[m.id]=e.target.value;save();});
+  // tags
+  card.querySelectorAll('.tgx').forEach(x=>x.addEventListener('click',()=>{
+    removeTagFrom(m.id,x.dataset.tag);save();replaceCard(card,m);renderTagBar();}));
+  const tp=card.querySelector('.tagpick');
+  tp.addEventListener('change',()=>{
+    let v=tp.value; if(!v){return;}
+    if(v==='__custom__'){v=(prompt('שם התגית החדשה:')||'').trim(); if(!v){tp.value='';return;}
+      if(!allTags().includes(v))ann.customTags.push(v); populateBulk();}
+    addTagTo(m.id,v);save();replaceCard(card,m);renderTagBar();
+  });
   // actions
   card.querySelectorAll('.act[data-a]').forEach(b=>b.addEventListener('click',()=>{
     const a=b.dataset.a;
@@ -307,6 +379,7 @@ function visibleMsgs(){
   if(q) rows=rows.filter(m=>(m.subject+' '+people(m.to)+' '+people(m.cc)+' '+nm(m.from)+' '+
       (m.bodyNew||'').replace(/<[^>]+>/g,' ')+' '+(ann.notes[m.id]||'')).toLowerCase().includes(q));
   if(!state.showRemoved) rows=rows.filter(m=>!ann.removed[m.id]);
+  if(state.tags.size) rows=rows.filter(m=>tagsOf(m.id).some(t=>state.tags.has(t)));
   rows.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
   if(!state.asc) rows=rows.reverse();
   return rows;
@@ -400,11 +473,48 @@ document.getElementById('importFile').addEventListener('change',e=>{
     ann.highlights=Object.assign(ann.highlights,d.highlights||{});
     ann.removed=Object.assign(ann.removed,d.removed||{});
     ann.selected=Object.assign(ann.selected||{},d.selected||{});
-    save();updateStats();updateSelCount();render();alert('הגיבוי נטען בהצלחה.');}catch(err){alert('קובץ לא תקין.');}};
+    ann.tags=Object.assign(ann.tags||{},d.tags||{});
+    (d.customTags||[]).forEach(t=>{if(!ann.customTags.includes(t))ann.customTags.push(t);});
+    save();populateBulk();updateStats();updateSelCount();renderTagBar();render();alert('הגיבוי נטען בהצלחה.');}catch(err){alert('קובץ לא תקין.');}};
   r.readAsText(f);});
 
+// ----- tags: bulk apply + filter bar -----
+function populateBulk(){
+  const sel=document.getElementById('bulkTag');if(!sel)return;
+  sel.innerHTML='<option value="">— בחר תגית —</option>'
+    +allTags().map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('')
+    +'<option value="__custom__">➕ תגית חדשה…</option>';
+}
+function tagCount(t){let n=0;for(const id in ann.tags){if((ann.tags[id]||[]).includes(t))n++;}return n;}
+function renderTagBar(){
+  const bar=document.getElementById('tagbar');if(!bar)return;
+  bar.innerHTML=allTags().map(t=>{
+    const on=state.tags.has(t)?' on':'';const c=tagColor(t);
+    return `<button class="tf${on}" data-tag="${esc(t)}" style="--tc:${c}">${esc(t)}<span class="tfn">${tagCount(t)}</span></button>`;
+  }).join('');
+  bar.querySelectorAll('.tf').forEach(b=>b.addEventListener('click',()=>{
+    const t=b.dataset.tag;if(state.tags.has(t))state.tags.delete(t);else state.tags.add(t);
+    renderTagBar();render();
+  }));
+}
+document.getElementById('bulkTagBtn').addEventListener('click',()=>{
+  const sel=document.getElementById('bulkTag');let v=sel.value;
+  if(!v){alert('בחרו תגית מהרשימה.');return;}
+  if(v==='__custom__'){v=(prompt('שם התגית החדשה:')||'').trim();if(!v)return;
+    if(!allTags().includes(v))ann.customTags.push(v);populateBulk();}
+  const ids=Object.keys(ann.selected);
+  if(!ids.length){alert('סמנו תחילה מיילים (תיבת ה‑V), ואז «החל על המסומנים».');return;}
+  ids.forEach(id=>addTagTo(id,v));save();renderTagBar();render();
+  alert(`התגית «${v}» הוקצתה ל‑${ids.length} מיילים.`);
+});
+document.getElementById('clearTagFilter').addEventListener('click',()=>{
+  state.tags.clear();renderTagBar();render();
+});
+
+populateBulk();
 updateStats();
 updateSelCount();
+renderTagBar();
 render();
 </script>
 </body>
