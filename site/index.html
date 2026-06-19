@@ -166,6 +166,7 @@
       <button class="btn" id="printSelBtn">🖨️ PDF נבחרים (<span id="selCount">0</span>)</button>
       <button class="btn" id="clearSelBtn">✗ נקה בחירה</button>
       <button class="btn" id="exportBtn">⬇ גיבוי</button>
+      <button class="btn" id="dossierBtn">📄 ייצוא תיק ערוך</button>
       <button class="btn" id="importBtn">⬆ טעינת גיבוי</button>
       <input id="importFile" type="file" accept="application/json" style="display:none">
       <span class="saved" id="saved">נשמר ✓</span>
@@ -465,6 +466,41 @@ document.getElementById('exportBtn').addEventListener('click',()=>{
   const blob=new Blob([JSON.stringify(ann,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='קריספין-הערות-'+new Date().toISOString().slice(0,10)+'.json';a.click();});
+// Export a self-contained HTML containing ONLY the kept emails with edits baked in.
+function exportDossier(){
+  let keep=EMAILS.filter(m=>!ann.removed[m.id]);
+  const selIds=Object.keys(ann.selected);
+  if(selIds.length && confirm(`לייצא רק את ${selIds.length} המיילים המסומנים (V)?\n\nאישור = רק המסומנים  ·  ביטול = כל מה שלא הוסר`)){
+    keep=keep.filter(m=>ann.selected[m.id]);
+  }
+  if(!keep.length){alert('אין מיילים לייצוא.');return;}
+  const baked={notes:{},highlights:{},tags:{},customTags:ann.customTags||[],removed:{},selected:{}};
+  keep.forEach(m=>{const id=m.id;
+    if(ann.notes[id])baked.notes[id]=ann.notes[id];
+    if(ann.highlights[id])baked.highlights[id]=ann.highlights[id];
+    if(ann.tags[id])baked.tags[id]=ann.tags[id];});
+  let html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  // drop the rendered list DOM (it is rebuilt on open) to keep the file small
+  const m1='<main class="wrap" id="list">',m2='</main>';
+  let a=html.indexOf(m1),b=html.indexOf(m2,a);
+  if(a>=0&&b>=0)html=html.slice(0,a+m1.length)+html.slice(b);
+  // swap in the curated email data
+  const newData=JSON.stringify(keep).replace(/<\//g,'<\\/');
+  const dA='const EMAILS = ',dB=';\nconst ME =';
+  let i=html.indexOf(dA),j=html.indexOf(dB,i);
+  if(i<0||j<0){alert('שגיאת ייצוא (נתונים).');return;}
+  html=html.slice(0,i+dA.length)+newData+html.slice(j);
+  // bake the annotations into the initial state
+  const newAnn=JSON.stringify(baked).replace(/<\//g,'<\\/');
+  const aA='let ann = ',aB=';\ntry{const s=localStorage';
+  let p=html.indexOf(aA),q=html.indexOf(aB,p);
+  if(p>=0&&q>=0)html=html.slice(0,p+aA.length)+newAnn+html.slice(q);
+  const blob=new Blob([html],{type:'text/html'});
+  const el=document.createElement('a');el.href=URL.createObjectURL(blob);
+  el.download='תיק-קריספין-ערוך-'+new Date().toISOString().slice(0,10)+'.html';el.click();
+  alert(`נוצר קובץ עם ${keep.length} מיילים + כל העריכות. זה הקובץ לשמור/לשלוח.`);
+}
+document.getElementById('dossierBtn').addEventListener('click',exportDossier);
 document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
 document.getElementById('importFile').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;const r=new FileReader();
