@@ -58,21 +58,23 @@
   body.show-removed .card.removed{display:block;opacity:.55}
   body.show-removed .card.removed .legal{filter:grayscale(.4)}
 
-  .legal{font-size:12.5px;padding:11px 16px;border-bottom:1px solid var(--line)}
+  .legal{display:flex;align-items:center;flex-wrap:wrap;gap:5px 10px;font-size:12.5px;padding:7px 14px;border-bottom:1px solid var(--line)}
   .card.sent .legal{background:var(--sent-soft);border-bottom-color:var(--sent-bd)}
   .card.received .legal{background:var(--recv-soft);border-bottom-color:var(--recv-bd)}
-  .legal .row1{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px}
-  .tag{font-size:11px;font-weight:800;padding:2px 9px;border-radius:20px}
+  .pick{display:inline-flex;align-items:center;cursor:pointer;margin-inline-end:2px}
+  .pick input{width:18px;height:18px;cursor:pointer;accent-color:var(--sent)}
+  .tag{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px}
   .tag.sent{background:var(--sent);color:#fff}
   .tag.received{background:var(--recv);color:#fff}
   .legal b{font-weight:700}
-  .legal .ml{color:var(--muted)}
-  .legal .when{font-weight:700;color:#222}
-  .legal .reply{margin-top:5px;color:#7a5a00;background:rgba(255,214,0,.16);border:1px solid rgba(212,170,0,.35);
-    border-radius:7px;padding:3px 9px;display:inline-block;font-size:12px}
-  .subj{font-weight:700;font-size:14px;margin:6px 0 0}
+  .parties{font-size:13px;color:#1d2530}
+  .when{font-weight:700;color:#333;white-space:nowrap}
+  .reply{color:#7a5a00;background:rgba(255,214,0,.18);border:1px solid rgba(212,170,0,.4);
+    border-radius:6px;padding:1px 7px;font-size:11.5px}
+  .subj{flex-basis:100%;font-weight:700;font-size:13.5px;margin-top:1px;color:#2a3344}
+  .card.selected{outline:2px solid var(--sent);outline-offset:-2px}
 
-  .body-wrap{padding:10px 18px 6px}
+  .body-wrap{padding:6px 16px 2px}
   .email-body{font-size:15px;overflow-x:auto;word-break:break-word}
   .email-body img{max-width:100%;height:auto}
   .email-body table{max-width:100%}
@@ -98,10 +100,10 @@
   .act.danger:hover{border-color:#c0392b;color:#c0392b}
 
   /* focus mode: fade everything except yellow highlights */
-  body.focus .email-body, body.focus .email-body *{color:rgba(20,24,32,.07)!important}
-  body.focus .email-body img{opacity:.1}
+  body.focus .email-body, body.focus .email-body *{color:rgba(20,24,32,.18)!important}
+  body.focus .email-body img{opacity:.2}
   body.focus .email-body mark.hl, body.focus .email-body mark.hl *{color:#161a12!important;background:rgba(255,206,0,.72)!important}
-  body.focus .card:not(:has(mark.hl)){opacity:.45}
+  body.focus .card:not(:has(mark.hl)){opacity:.55}
 
   .empty{text-align:center;color:var(--muted);padding:60px 0}
   footer{color:var(--muted);font-size:12px;text-align:center;margin:30px 0 40px}
@@ -112,6 +114,8 @@
     .card{break-inside:avoid;box-shadow:none;border:1px solid #ccc;margin:8px 0}
     .note{break-inside:avoid}
     body.show-removed .card.removed{display:none!important}
+    body.print-selected .card:not(.selected){display:none!important}
+    body.print-selected .threadhead, body.print-selected .sep{display:none!important}
     a[href]::after{content:""}
   }
 </style>
@@ -137,7 +141,9 @@
       <button class="btn" id="sortBtn">⌃ הישן→חדש</button>
       <button class="btn" id="focusBtn">🔦 מצב מיקוד</button>
       <button class="btn" id="removedBtn">👁 הצג שהוסרו</button>
-      <button class="btn" id="printBtn">🖨️ ייצוא PDF</button>
+      <button class="btn" id="printBtn">🖨️ PDF (הכל)</button>
+      <button class="btn" id="printSelBtn">🖨️ PDF נבחרים (<span id="selCount">0</span>)</button>
+      <button class="btn" id="clearSelBtn">✗ נקה בחירה</button>
       <button class="btn" id="exportBtn">⬇ גיבוי</button>
       <button class="btn" id="importBtn">⬆ טעינת גיבוי</button>
       <input id="importFile" type="file" accept="application/json" style="display:none">
@@ -166,8 +172,9 @@ function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>'
 function nm(p){return (p&&(p.name||p.address))||'';}
 function people(list){return (list||[]).map(nm).filter(Boolean).join(', ');}
 
-let ann = {notes:{},highlights:{},removed:{}};
+let ann = {notes:{},highlights:{},removed:{},selected:{}};
 try{const s=localStorage.getItem(LS_KEY); if(s) ann=Object.assign(ann,JSON.parse(s));}catch(e){}
+if(!ann.selected) ann.selected={};
 function save(){ try{localStorage.setItem(LS_KEY,JSON.stringify(ann)); flash();}catch(e){} }
 let st;
 function flash(){const el=document.getElementById('saved');el.classList.add('show');clearTimeout(st);st=setTimeout(()=>el.classList.remove('show'),1200);}
@@ -189,25 +196,38 @@ function applyHighlights(container, snippets){
   });
 }
 
+function party(a){
+  a=(a||'').toLowerCase();
+  if(a===ME.toLowerCase())return 'חן קריספין';
+  if(a.includes('shilansky'))return 'עו״ד יוסי דרור (שילנסקי)';
+  if(a.includes('yossidror'))return 'עו״ד יוסי דרור';
+  if(a.includes('elinor'))return 'אלינור (שילנסקי)';
+  if(a.includes('lirom')||a.includes('reut')||a.includes('ls-lawfirm'))return 'ב״כ קריספין';
+  if(a.includes('bankleumi'))return 'בנק לאומי';
+  return a||'—';
+}
+function tm(d){return d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jerusalem'});}
+
 function legalHTML(m){
   const d=new Date(m.date);
   const dirHe=m.direction==='sent'?'נשלח':'התקבל';
-  const fromTxt=m.direction==='sent'?'חן קריספין (Hen@ak-adv.co.il)':`${esc(nm(m.from))} &lt;${esc(m.from.address)}&gt;`;
+  const sender=party(m.from.address);
+  const toParty=m.direction==='sent'?'עו״ד יוסי דרור':'חן קריספין';
+  const fullTo=esc(people(m.to))+(m.cc&&m.cc.length?' · עותק: '+esc(people(m.cc)):'');
   let reply='';
   if(m.inReplyTo){
     const rd=new Date(m.inReplyTo.date);
-    const rfrom=m.inReplyTo.direction==='sent'?'חן קריספין':esc(nm(m.inReplyTo.from));
-    reply=`<div class="reply">↩ בתגובה להודעה מאת <b>${rfrom}</b> מיום ${esc(fmtDay.format(rd))} בשעה ${esc(rd.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jerusalem'}))}</div>`;
+    const rfrom=party(m.inReplyTo.from.address);
+    reply=`<span class="reply">↩ בתגובה ל<b>${esc(rfrom)}</b> · ${esc(fmtDay.format(rd))} ${esc(tm(rd))}</span>`;
   }
-  let cc = m.cc&&m.cc.length?`<div><span class="ml">עותק:</span> ${esc(people(m.cc))}</div>`:'';
+  const checked=ann.selected[m.id]?'checked':'';
   return `<div class="legal">
-    <div class="row1"><span class="tag ${m.direction}">${dirHe}</span>
-      <span><span class="ml">מאת:</span> <b>${fromTxt}</b></span></div>
-    <div><span class="ml">אל:</span> ${esc(people(m.to))||'—'}</div>
-    ${cc}
-    <div class="when">🗓 ${esc(fmtFull.format(d))}</div>
+    <label class="pick" title="סימון לייצוא PDF"><input type="checkbox" ${checked}></label>
+    <span class="tag ${m.direction}">${dirHe}</span>
+    <span class="parties" title="אל: ${fullTo}"><b>${esc(sender)}</b> ⟵ <b>${esc(toParty)}</b></span>
+    <span class="when">🗓 ${esc(fmtDay.format(d))} · ${esc(tm(d))}</span>
     ${reply}
-    <div class="subj">${esc(m.subject)}</div>
+    <span class="subj">${esc(m.subject)}</span>
   </div>`;
 }
 
@@ -247,6 +267,14 @@ function renderCard(m){
   const body=card.querySelector('.email-body');
   applyHighlights(body, ann.highlights[m.id]);
   body.querySelectorAll('img').forEach(im=>im.addEventListener('error',()=>im.style.display='none'));
+  if(ann.selected[m.id]) card.classList.add('selected');
+  // selection checkbox
+  const pick=card.querySelector('.pick input');
+  pick.addEventListener('change',()=>{
+    if(pick.checked){ann.selected[m.id]=1;card.classList.add('selected');}
+    else{delete ann.selected[m.id];card.classList.remove('selected');}
+    save(); updateSelCount();
+  });
   // notes
   card.querySelector('.note').addEventListener('input',e=>{ann.notes[m.id]=e.target.value;save();});
   // actions
@@ -345,7 +373,21 @@ document.getElementById('focusBtn').addEventListener('click',e=>{state.focus=!st
 document.getElementById('removedBtn').addEventListener('click',e=>{state.showRemoved=!state.showRemoved;
   document.body.classList.toggle('show-removed',state.showRemoved);e.target.classList.toggle('on',state.showRemoved);
   e.target.textContent=state.showRemoved?'👁 מסתיר שהוסרו':'👁 הצג שהוסרו';render();});
+function updateSelCount(){const n=Object.keys(ann.selected).length;
+  const el=document.getElementById('selCount');if(el)el.textContent=n;}
 document.getElementById('printBtn').addEventListener('click',()=>window.print());
+document.getElementById('printSelBtn').addEventListener('click',()=>{
+  if(!Object.keys(ann.selected).length){alert('סמנו תחילה מיילים (תיבת ה‑V ליד כל מייל), ואז «PDF נבחרים».');return;}
+  document.body.classList.add('print-selected');
+  const after=()=>{document.body.classList.remove('print-selected');window.removeEventListener('afterprint',after);};
+  window.addEventListener('afterprint',after);
+  window.print(); setTimeout(after,1000);
+});
+document.getElementById('clearSelBtn').addEventListener('click',()=>{
+  ann.selected={};save();updateSelCount();
+  document.querySelectorAll('.card.selected').forEach(c=>{c.classList.remove('selected');
+    const cb=c.querySelector('.pick input');if(cb)cb.checked=false;});
+});
 document.getElementById('exportBtn').addEventListener('click',()=>{
   const blob=new Blob([JSON.stringify(ann,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -357,10 +399,12 @@ document.getElementById('importFile').addEventListener('change',e=>{
     ann.notes=Object.assign(ann.notes,d.notes||{});
     ann.highlights=Object.assign(ann.highlights,d.highlights||{});
     ann.removed=Object.assign(ann.removed,d.removed||{});
-    save();updateStats();render();alert('הגיבוי נטען בהצלחה.');}catch(err){alert('קובץ לא תקין.');}};
+    ann.selected=Object.assign(ann.selected||{},d.selected||{});
+    save();updateStats();updateSelCount();render();alert('הגיבוי נטען בהצלחה.');}catch(err){alert('קובץ לא תקין.');}};
   r.readAsText(f);});
 
 updateStats();
+updateSelCount();
 render();
 </script>
 </body>
