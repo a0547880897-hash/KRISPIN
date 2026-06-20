@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מחקר: עו"ד יוסי דרור — כונס נכסים | טענות, פסיקה ודפוסים</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a2230; --panel2:#222c3d; --ink:#eef2f7; --mut:#9fb0c3;
+    --line:#33415a; --accent:#5b9dff; --gold:#e9b949;
+    --amber:#f0a92b; --red:#ef5b6b; --green:#43c08a; --purple:#b07cf0; --blue:#4db5e0; --gray:#7b8a9e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI","Assistant","Heebo","Arial Hebrew",Arial,sans-serif;}
+  #deck{height:100vh;width:100vw;overflow:hidden;position:relative}
+  .slide{position:absolute;inset:0;padding:4.5vh 5vw 8vh;overflow-y:auto;
+    opacity:0;visibility:hidden;transition:opacity .25s ease;}
+  .slide.active{opacity:1;visibility:visible}
+  h1{font-size:2.6rem;line-height:1.15;margin:.2em 0;color:#fff}
+  h2{font-size:1.9rem;margin:.1em 0 .5em;color:#fff;border-bottom:2px solid var(--line);padding-bottom:.25em}
+  h3{font-size:1.25rem;margin:.8em 0 .35em;color:var(--gold)}
+  p,li,td,th{font-size:1.06rem;line-height:1.6}
+  .sub{color:var(--mut);font-size:1.15rem}
+  .small{font-size:.92rem;color:var(--mut)}
+  .tiny{font-size:.8rem;color:var(--gray)}
+  ul{margin:.3em 0 .6em;padding-inline-start:1.3em}
+  li{margin:.28em 0}
+  blockquote{margin:.5em 0;padding:.5em .9em;border-inline-start:4px solid var(--accent);
+    background:#12233b;border-radius:6px;color:#dce8f7;font-size:1.0rem}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .card.h{background:var(--panel2)}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin:.4em 0}
+  .pill{display:inline-block;padding:.18em .7em;border-radius:999px;font-size:.82rem;font-weight:600;border:1px solid transparent;white-space:nowrap}
+  .p-case{background:#23344d;color:#cfe0f5;border-color:#35506f}
+  .p-date{background:#2a2f3e;color:#c8d2e0}
+  .p-alleg{background:rgba(240,169,43,.14);color:var(--amber);border-color:rgba(240,169,43,.4)}
+  .p-rej{background:rgba(239,91,107,.13);color:var(--red);border-color:rgba(239,91,107,.4)}
+  .p-paid{background:rgba(67,192,138,.13);color:var(--green);border-color:rgba(67,192,138,.4)}
+  .p-judge{background:rgba(176,124,240,.14);color:var(--purple);border-color:rgba(176,124,240,.4)}
+  .p-settle{background:rgba(77,181,224,.13);color:var(--blue);border-color:rgba(77,181,224,.4)}
+  .p-block{background:#2a3140;color:var(--gray);border:1px dashed #4a5870}
+  .p-id-hi{background:rgba(67,192,138,.12);color:var(--green)}
+  .p-id-mid{background:rgba(240,169,43,.12);color:var(--amber)}
+  .p-id-lo{background:rgba(239,91,107,.12);color:var(--red)}
+  table{width:100%;border-collapse:collapse;margin:.4em 0}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:right;vertical-align:top}
+  th{background:#1d2738;color:#dfe8f4;font-size:.95rem}
+  td{font-size:.92rem}
+  tr:nth-child(even) td{background:#161e2b}
+  .who{color:var(--gold);font-weight:600}
+  .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:.3em}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin:.6em 0}
+  .key{font-weight:700;color:#fff}
+  .ttl-wrap{height:88vh;display:flex;flex-direction:column;justify-content:center}
+  .badge-star{color:var(--gold)}
+  .foot{position:fixed;bottom:0;right:0;left:0;height:5vh;display:flex;align-items:center;
+    justify-content:space-between;padding:0 2vw;background:#0b0f14;border-top:1px solid var(--line);
+    font-size:.8rem;color:var(--mut);z-index:50}
+  .nav{display:flex;gap:8px;align-items:center}
+  .nav button{background:#1d2738;color:#cfe0f5;border:1px solid var(--line);border-radius:6px;
+    padding:3px 10px;cursor:pointer;font-size:.85rem}
+  .nav button:hover{background:#26344a}
+  .prog{height:3px;background:var(--accent);position:fixed;top:0;right:0;z-index:60;transition:width .25s}
+  .warn{background:#2b1d22;border:1px solid #6a3340;border-radius:12px;padding:14px 18px}
+  .ok{background:#15291f;border:1px solid #2c5a42;border-radius:12px;padding:14px 18px}
+  .two-col{column-count:2;column-gap:26px}
+  .nobreak{break-inside:avoid}
+  a{color:var(--accent)}
+  .kpi{font-size:2.2rem;font-weight:800;color:#fff;line-height:1}
+  .kpi-l{color:var(--mut);font-size:.9rem}
+  @media print{
+    .slide{position:relative;opacity:1!important;visibility:visible!important;page-break-after:always;height:auto;min-height:96vh}
+    .foot,.prog{display:none}
+    html,body,#deck{height:auto;overflow:visible}
+  }
+</style>
+</head>
+<body>
+<div class="prog" id="prog"></div>
+<div id="deck">
+
+<!-- 1 TITLE -->
+<section class="slide active">
+  <div class="ttl-wrap">
+    <p class="sub">מחקר משפטי — מקורות פומביים</p>
+    <h1>עו"ד יוסי דרור — כונס נכסים<br>טענות חייבים, פסיקה ודפוסים חוזרים</h1>
+    <p class="sub" style="margin-top:.6em">בידוד טענות שהועלו נגדו בהליכים • הבחנה בין טענה לקביעה שיפוטית • הדגשת הערות שופטים</p>
+    <div class="meta" style="margin-top:1.4em">
+      <span class="pill p-case">היקף: 1996–2026</span>
+      <span class="pill p-date">~40 הליכים שנבדקו</span>
+      <span class="pill p-judge">הוכן: יוני 2026</span>
+    </div>
+    <p class="small" style="margin-top:1.6em">⌨️ ניווט: מקשי חיצים / רווח • F11 למסך מלא • Ctrl+P לייצוא PDF</p>
+  </div>
+</section>
+
+<!-- 2 AGENDA -->
+<section class="slide">
+  <h2>מבנה המצגת</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3>חלק א' — תשתית</h3>
+      <ul>
+        <li>אזהרה מתודולוגית: <b>טענה</b> מול <b>קביעה</b></li>
+        <li>תג זיהוי — מי הוא יוסי דרור (ודאות)</li>
+        <li>בני‑שם שסוננו</li>
+        <li>מפת התיקים — ציר זמן</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>חלק ב' — תיק‑אחר‑תיק</h3>
+      <ul>
+        <li>שקופית לכל פרשה: תיק • תאריך • נושא • צדדים</li>
+        <li>הנקודות שנטענו נגדו מצד כל המעורבים</li>
+        <li>גורל הטענה + <span class="badge-star">★</span> הערות שופטים</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>חלק ג' — אשכולות נושאיים</h3>
+      <ul>
+        <li>שכר טרחה • מכירה בחסר/פסיביות</li>
+        <li>הסתרה/קנוניה/שקיפות</li>
+        <li>סעיפים שהוא ניסח (ערפול)</li>
+        <li>קמפיין "הבית בידנו" (הסברה)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>חלק ד' — סינתזה</h3>
+      <ul>
+        <li>שאלת ה"שיטה" — תשובה הגונה</li>
+        <li>הערות שופטים — ריכוז</li>
+        <li>ממצאים שליליים • השוואה ארצית</li>
+        <li>מגבלות • שורה תחתונה • נספחים</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 METHODOLOGY -->
+<section class="slide">
+  <h2>⚠️ אזהרה מתודולוגית — חובה לקרוא</h2>
+  <div class="warn">
+    <p style="font-size:1.15rem"><b>ההבחנה החשובה ביותר במסמך:</b></p>
+    <div class="grid g2" style="margin-top:.4em">
+      <div class="card"><span class="pill p-alleg">טענה</span>
+        <p style="margin:.4em 0 0">מה ש<b>צד טען</b> (חייב/רוכש/נושה). אינה ראיה ואינה אמת — רק עמדה בהליך.</p></div>
+      <div class="card"><span class="pill p-judge">קביעה שיפוטית</span>
+        <p style="margin:.4em 0 0">מה ש<b>בית המשפט פסק</b>. רק זה מבוסס משפטית.</p></div>
+    </div>
+    <p style="margin-top:.8em"><b>השורה התחתונה שתחזור לאורך כל המצגת:</b> כמעט כל טענה חמורה נגד דרור — <span class="p-rej" style="padding:.1em .4em;border-radius:4px">נדחתה</span>, הסתיימה בפשרה, נפסלה כראיה, או לא הוכרעה. אציג זאת ביושר כדי שתדע <u>מה מבוסס ומה ניתן לסתירה</u>.</p>
+  </div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><h3>מקורות</h3><p class="small">תקדין‑לייט (API חופשי — עמוד ראשון), judgments.org.il, פסקדין, אתר העליון, פרסומי המשרד, מרשם החברות, לשכת עוה"ד, עיתונות.</p></div>
+    <div class="card"><h3>מגבלות</h3><p class="small">נבו, תקדין מלא, נט‑המשפט, רשומות — בתשלום/חסומים. חלק מההכרעות הסופיות לא אומתו מילולית — מסומן "חסום".</p></div>
+    <div class="card"><h3>זהות</h3><p class="small">כל פריט מתויג ברמת ודאות שמדובר ב<b>אותו</b> יוסי דרור: <span class="pill p-id-hi">גבוהה</span> <span class="pill p-id-mid">בינונית</span> <span class="pill p-id-lo">נמוכה</span></p></div>
+  </div>
+</section>
+
+<!-- 4 IDENTITY -->
+<section class="slide">
+  <h2>תג זיהוי — מי הוא עו"ד יוסי דרור <span class="pill p-id-hi">ודאות גבוהה</span></h2>
+  <div class="grid g2">
+    <div class="card h">
+      <h3>מזהים פומביים</h3>
+      <ul>
+        <li><b>חבר לשכת עוה"ד משנת 1995</b> (לפי פרופיל המשרד).</li>
+        <li>משרד בני ברק: כנרת/מצדה 5, מגדלי ב.ס.ר 3, קומה 20.</li>
+        <li>טל' 03‑6967020 / 03‑9107111.</li>
+        <li>"יוסי דרור, חברת עורכי‑דין" — <b>ח.פ 514804871</b> (2012).</li>
+        <li>במרשם לשכת עוה"ד — <b>"יוסי דרור" יחיד</b> התואם כתובת זו.</li>
+      </ul>
+    </div>
+    <div class="card h">
+      <h3>תחום ולקוחות</h3>
+      <ul>
+        <li>פעיל בכינוסי נכסים "<b>החל משנת 2000</b>".</li>
+        <li>לקוחות מוצהרים: <b>בנק לאומי — מערך המשכנתאות</b> ואגף חוב"ב; בנק דיסקונט; עיריית אילת.</li>
+        <li>מנהל בית‑מכירות לרכבי כינוס (Bidspirit).</li>
+        <li>כיום בעמוד הצוות של <b>"דב שילנסקי ושות'"</b> (yossi@shilansky.co.il) — "30+ שנות ניסיון", כינוסי נכסים.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <p><b>שיטת ההצלבה:</b> בכמעט כל תיק הוא מופיע ככונס/ב"כ של <span class="who">בנק לאומי למשכנתאות</span> — בדיוק הלקוח המוצהר בשני אתריו. צירוף השם + התפקיד + הבנק = אותו אדם, ברמת ודאות גבוהה.</p>
+    <p class="small">הערה: <b>תעודת זהות</b> היא מידע פרטי — לא חיפשנו ולא נכלל. המזהה הפומבי הוא מספר רישיון בלשכה (לא פורסם בגלוי) + ח.פ החברה.</p>
+  </div>
+</section>
+
+<!-- 5 NAMESAKES -->
+<section class="slide">
+  <h2>בני‑שם שסוננו (כדי לא לייחס בטעות)</h2>
+  <p class="sub">"יוסי דרור" שם נפוץ — אלה אנשים <b>אחרים</b> שלא נכללו:</p>
+  <table>
+    <tr><th>מי</th><th>זיהוי</th><th>למה לא הוא</th></tr>
+    <tr><td>עו"ד יוסף דרור, רמת השרון (dror‑law.com)</td><td>מקרקעין/תעבורה</td><td>תחום ועיר אחרים</td></tr>
+    <tr><td>עו"ד יוסי בן‑דרור, הרצליה (ybendror.com)</td><td>מסחרי/M&amp;A</td><td>שם משפחה אחר</td></tr>
+    <tr><td>"דרור סדן" / "דוד דרור" (ע"א 2161/11)</td><td>שמות בעלי‑דין בפסקי דין אחרים</td><td>צצים בחיפושי שם — לא עו"ד הכינוס</td></tr>
+    <tr><td>עו"ד יוסי דרור — ב"כ עיריית אילת (חלק מהתיקים)</td><td>ליטיגטור דרומי</td><td>ייתכן אדם שונה; סומן "זיהוי בינוני"</td></tr>
+    <tr><td>מאמן קריפטו / מנכ"ל Aetrex / אקדמאי</td><td>לא עורכי דין</td><td>—</td></tr>
+  </table>
+  <div class="ok" style="margin-top:10px"><p>סריקה ייעודית של <b>597 מזהי תיקים</b> אישרה שאף אחד מבני‑השם לא יוחס לדרור הכונס.</p></div>
+</section>
+
+<!-- 6 CASE MAP / TIMELINE -->
+<section class="slide">
+  <h2>מפת התיקים — ציר זמן</h2>
+  <div class="legend small">
+    <span><span class="badge-star">★</span> = הערת שופט / טענה חריגה בולטת</span>
+    <span class="pill p-rej">נדחה</span><span class="pill p-settle">פשרה</span>
+    <span class="pill p-paid">חויב/הוחזר כסף</span><span class="pill p-block">חסום</span>
+  </div>
+  <table>
+    <tr><th>שנה</th><th>תיק / פרשה</th><th>תפקיד דרור</th><th>טענה מרכזית נגדו</th><th>גורל</th></tr>
+    <tr><td>2004‑05</td><td><b>בונוביל</b> ע"א 4162/04 <span class="pill p-id-lo">נמוך</span></td><td>כונס זמני</td><td>מכר בחוסר תום לב / בחסר</td><td>רשות לתבוע נדחתה</td></tr>
+    <tr><td>2005</td><td><b>בטיט</b> בר"ע (ב"ש) 503/04 <span class="badge-star">★</span></td><td>כונס (מערער)</td><td>פסיביות — "לא עשה כל פעולה"</td><td>ביקורת; שכר הוחזר לדיון</td></tr>
+    <tr><td>2007</td><td><b>פוירשטיין</b> רע"א 5892/07+8782/07</td><td>כונס</td><td>(אין נגד דרור)</td><td><span class="pill p-rej">נדחה</span></td></tr>
+    <tr><td>2007</td><td><b>צרפתי</b> בר"ע (ב"ש) 550/07 <span class="badge-star">★</span></td><td>כונס</td><td>"מו"מ נסתר" / קנוניה</td><td><span class="pill p-rej">נדחה (סמכות)</span></td></tr>
+    <tr><td>2011‑16<br>+2021</td><td><b>פלח</b> (≈10 הליכים) <span class="badge-star">★</span></td><td>כונס</td><td>"תרמית, מזימה, קנוניה"</td><td><span class="pill p-rej">נדחה — "נהפוך הוא"</span></td></tr>
+    <tr><td>2016</td><td><b>שדה</b> רע"צ 35333‑06‑16 <span class="badge-star">★</span></td><td>כונס</td><td>"ישב באפס מעשה"; "מידע כוזב לרשם"</td><td><span class="pill p-settle">פשרה</span></td></tr>
+    <tr><td>2016</td><td><b>הניג</b> רע"צ 58936‑09‑16 <span class="badge-star">★</span></td><td>כונס</td><td>שכ"ט 610,088 ₪ מופרז</td><td><span class="pill p-rej">נדחה (תעריף)</span></td></tr>
+    <tr><td>2018‑22</td><td><b>אלימלך</b> ת"א 41505‑07‑18 <span class="badge-star">★</span></td><td>כונס</td><td>מכר ב‑60% + "עדות שיטה"</td><td><span class="pill p-rej">ההקלטה נפסלה</span></td></tr>
+    <tr><td>2019</td><td><b>דשתי</b> רע"א 37/19 / <b>בן טובים</b> רע"א 1708/19 <span class="pill p-block">חסום</span></td><td>כונס</td><td>מכר חצי‑חלק בחסר / —</td><td>חלקי / לא נגיש</td></tr>
+    <tr><td>2024</td><td><b>רפאל כהן</b> ת"א 30628‑08‑18 <span class="badge-star">★</span></td><td>כונס</td><td>הפר הבטחה; "לא דיווח לרשם"</td><td><span class="pill p-rej">נדחה — "פעל בשקיפות"</span></td></tr>
+    <tr><td>2022</td><td><b>ריף</b> ת"א 64400‑01‑22 → ע"א 31216‑06‑22 <span class="badge-star">★</span></td><td>כונס</td><td>הפר סעיף "בלאי סביר" שניסח</td><td><span class="pill p-paid">79א: השיב 70,000 ₪</span></td></tr>
+  </table>
+  <p class="small">+ עשרות תיקים נוספים/שוליים (שמעיה, עטיה, דוידאשוילי, זוהר אשד, גליקשטיין, נוף, אילת, בת ים, סמרדין...) — בנספח.</p>
+</section>
+
+<!-- 7 BONOVIL -->
+<section class="slide">
+  <h2>בונוביל — ע"א 4162/04 <span class="pill p-id-lo">זיהוי נמוך‑בינוני</span></h2>
+  <div class="meta">
+    <span class="pill p-case">ע"א 4162/04 (עליון, גרוניס)</span>
+    <span class="pill p-date">10.8.2006</span>
+    <span class="pill p-case">מקור: פש"ר 51/96 (אלשיך)</span>
+  </div>
+  <p class="sub"><b>נושא:</b> תקדים על מתן רשות לתבוע כונס נכסים. | <b>צדדים:</b> חברת בונוביל 1995 (ע"י מנהל מיוחד עו"ד אנושי) נ' עו"ד דרור (כונס זמני) ואח' + <b>הבנק הבינלאומי</b>.</p>
+  <h3>הטענות נגד הכונס <span class="pill p-alleg">טענה (אנושי)</span></h3>
+  <blockquote>"הכונסים תפסו רכוש... ומכרו אותו <b>בחוסר תום לב</b> תוך <b>התעלמות מטענות</b>... באשר לבעלות... התמורה... <b>פחותה במידה ניכרת משוויו</b>."</blockquote>
+  <div class="tag-row"><span class="pill p-alleg">חוסר תום לב</span><span class="pill p-alleg">מכירה בחסר</span><span class="pill p-alleg">הסתרה</span></div>
+  <h3>הקביעה</h3>
+  <p><span class="pill p-rej">רשות לתבוע נדחתה</span> על העובדות; שאלת חסינות‑השחרור של הכונסים נותרה פתוחה. <b>אין קביעת אשם.</b></p>
+  <div class="warn" style="margin-top:8px"><p>⚠️ <b>ספק זיהוי:</b> הנושה הוא <b>הבנק הבינלאומי</b> (לא לאומי), וזו חדלות פירעון תאגידית (מלאי חברת אופנה) — חורג מפרופיל המשכנתאות של דרור. <b>ייתכן שזה דרור אחר.</b> לא להציג כ"שלו" בוודאות.</p></div>
+</section>
+
+<!-- 8 BETIT (judicial criticism) -->
+<section class="slide">
+  <h2><span class="badge-star">★</span> בטיט — בר"ע (ב"ש) 503/04 <span class="pill p-id-mid">זיהוי בינוני‑גבוה</span></h2>
+  <div class="meta">
+    <span class="pill p-case">בר"ע (ב"ש) 503/04 (הנדל)</span>
+    <span class="pill p-date">4.1.2005</span>
+    <span class="pill p-case">אילת</span>
+  </div>
+  <p class="sub"><b>נושא:</b> ערעור של <b>דרור עצמו</b> על ביטול מינויו והפחתת שכרו. | <b>צדדים:</b> עו"ד יוסי דרור (כונס, מערער) נ' יוסף ונופר בטיט.</p>
+  <div class="warn">
+    <h3 style="color:#fff;margin-top:0">★ הביקורת השיפוטית הממשית ביותר שנמצאה</h3>
+    <blockquote>הכונס "<b>לא הכחיש כי לא עשה כל פעולה לקידום מכירת הנכס</b>"... מונה ככונס "<b>טרם נמסרו אזהרות לחייבים</b>".</blockquote>
+    <p>בית המשפט: שיקולי "<b>חוסר פעילות</b>" של הכונס "בעלי נפקות ומשקל"; החזיר את התיק לקבוע שכר "<b>אם בכלל</b>"; ללא הוצאות לטובת דרור כי "<b>החסיר נתונים</b>" בערכאה קמא.</p>
+  </div>
+  <div class="tag-row" style="margin-top:8px"><span class="pill p-judge">★ הערת שופט: פסיביות</span><span class="pill p-alleg">שכר טרחה</span></div>
+  <p class="small">חשוב: ביקורת על <b>חריצות ושכר</b> — לא קביעת מרמה/חוסר יושר. ועדיין: זו "הערת שופט" הקרובה ביותר למה שחיפשת. (תזכורת תמטית: ראו "פסיביות" חוזרת גם בשדה ובאלימלך.)</p>
+</section>
+
+<!-- 9 FEUERSTEIN -->
+<section class="slide">
+  <h2>פוירשטיין — רע"א 5892/07 + 8782/07 <span class="pill p-id-hi">זיהוי גבוה</span></h2>
+  <div class="meta">
+    <span class="pill p-case">רע"א 5892/07 (ג'ובראן)</span><span class="pill p-date">8.7.2007</span>
+    <span class="pill p-case">רע"א 8782/07 (מלצר)</span><span class="pill p-date">21.10.2007</span>
+  </div>
+  <p class="sub"><b>נושא:</b> עיכוב פינוי במימוש משכנתא. משק 46, מושב בצרה. | <b>צדדים:</b> רפי/דב פוירשטיין נ' עו"ד יוסי דרור (כונס) + בנק לאומי למשכנתאות + משה+גרדה פוירשטיין.</p>
+  <h3>הטענות <span class="pill p-alleg">טענה (המבקש)</span></h3>
+  <ul>
+    <li>"הוא בעל הזכויות הבלעדיות על הנכס".</li>
+    <li>"איש זקן וחולה" — נזק בלתי הפיך אם יפונה.</li>
+  </ul>
+  <p><b>אין שום טענת התנהלות נגד דרור</b> — סכסוך בעלות/פינוי בלבד.</p>
+  <h3>הקביעה</h3>
+  <p><span class="pill p-rej">5892/07: נדחתה</span> (אין שאלה משפטית; כבר ניתן סעד מקביל). <span class="pill p-block">8782/07: צו ארעי פרוצדורלי</span> (הוגש לערכאה הלא‑נכונה). <b>אין ביקורת על דרור.</b></p>
+</section>
+
+<!-- 10 TSARFATI -->
+<section class="slide">
+  <h2><span class="badge-star">★</span> צרפתי — בר"ע (ב"ש) 550/07 <span class="pill p-id-hi">זיהוי גבוה</span></h2>
+  <div class="meta">
+    <span class="pill p-case">בר"ע (ב"ש) 550/07 (הנדל)</span><span class="pill p-date">28.8.2007</span><span class="pill p-case">דירה בראשון לציון</span>
+  </div>
+  <p class="sub"><b>נושא:</b> תקיפת מכר בכינוס ע"י נושה‑מעקל. | <b>צדדים:</b> שרון צרפתי (מעקל) נ' עו"ד יוסי דרור (כונס) + בנק לאומי למשכנתאות + סויסה (חייבים) + בן‑עזוז (קונים).</p>
+  <h3>הטענות <span class="pill p-alleg">טענה (צרפתי)</span></h3>
+  <blockquote>"התנהל <b>מו"מ נסתר</b> בין הצדדים לעסקת המכר"; קיומה של "<b>קנוניה</b>"; ו"<b>תוספת תשלום</b>" אחרי המכר בטענת ליקויים שהתגלו — שהקטינה את התמורה.</blockquote>
+  <div class="tag-row"><span class="pill p-alleg">הסתרה / קנוניה</span><span class="pill p-alleg">ערפול (תוספת מחיר)</span><span class="pill p-alleg">מכירה בחסר</span></div>
+  <h3>הקביעה</h3>
+  <p><span class="pill p-rej">נדחה</span> — הוגש באיחור; סמכות רשם ההוצל"פ "מינהלית בעיקרה"; טענת קנוניה דורשת <b>תביעה אזרחית נפרדת</b>. הקנוניה יוחסה ל"קונים והחייב", לא קביעה נגד דרור. <span class="pill p-block">הכרעת הנדל הסופית — חסומה</span>.</p>
+</section>
+
+<!-- 11 FALACH overview -->
+<section class="slide">
+  <h2><span class="badge-star">★</span> פרשת פלח — סקירה (≈10 הליכים, 2011–2021) <span class="pill p-id-hi">זיהוי גבוה</span></h2>
+  <p class="sub"><b>צדדים:</b> יהודה+אילנה פלח (חייבים) נ' עו"ד יוסי דרור (כונס) + בנק לאומי למשכנתאות + פרוספר אזגי (קונה). חוב ≥800,000 ₪, תיק מ‑1997; מכר ב‑3,400,000 ₪; פס"ד מוסכם 28.1.2003.</p>
+  <table>
+    <tr><th>הליך</th><th>שופט / תאריך</th><th>תוצאה</th></tr>
+    <tr><td>רע"א 130/12</td><td>ג'ובראן · 13.2.2012</td><td>קיבל ערעור הבנק/כונס; "מעשה עשוי"</td></tr>
+    <tr><td>רע"א 5774/12</td><td>רובינשטיין · 30.7.2012</td><td>טענת קנוניה "בעלמא, ללא תימוכין"</td></tr>
+    <tr><td>רע"א 5947/12</td><td>ארבל · 8.1.2013</td><td><span class="pill p-block">עמ' 1 בלבד</span></td></tr>
+    <tr><td>רע"א 1743/14</td><td>בנמלך · 21.5.2014</td><td>הפלחים <b>משכו</b> את הבקשה; הוצאות עליהם</td></tr>
+    <tr><td>רע"א 3710/14 <span class="badge-star">★</span></td><td>עמית · 25.5.2014</td><td><span class="pill p-rej">נדחה על הסף — "נהפוך הוא"</span></td></tr>
+    <tr><td>ע"א 6885/14</td><td>עליון · 16.3.2016</td><td>הערעור נדחה <span class="pill p-block">טקסט מלא חסום</span></td></tr>
+    <tr><td>ת"א (מרכז) 6143‑10‑21</td><td>2021 (תביעה ישירה)</td><td>נזיקין נגד דרור אישית <span class="pill p-block">חסום</span></td></tr>
+    <tr><td>ת"א (ת"א) 53391‑11‑15 (תביעת הקונה אזגי)</td><td>פינצ'וק‑אלט · 11.7.2017</td><td><span class="pill p-settle">פשרה בגישור</span></td></tr>
+  </table>
+  <p class="small">ביקורת שיפוטית בפרשה — כולה על <b>החייבים</b> ("תרגיל מובהק בסחבת אין סופית"). <b>אין שום ביקורת על דרור.</b></p>
+</section>
+
+<!-- 12 FALACH 3710/14 deep -->
+<section class="slide">
+  <h2><span class="badge-star">★</span> פלח — רע"א 3710/14: "האקדח המעשן" שנדחה</h2>
+  <div class="meta"><span class="pill p-case">רע"א 3710/14 (עמית)</span><span class="pill p-date">25.5.2014</span></div>
+  <h3>הטענה <span class="pill p-alleg">טענה (פלח)</span></h3>
+  <blockquote>"<b>תרמית, מזימה, קנוניה</b> וכיו"ב בין הכונס לרוכש" — על סמך <b>הקלטת שיחה</b> בין הכונס לחוקר פרטי, שכונתה "אקדח מעשן".</blockquote>
+  <p class="small">בנוסף (רע"א 5774/12): שהקונה "אינו 'מציע אמיתי' אלא מתווך... מכירת הנכס לצד ד' ב‑<b>6 מיליון ₪</b>"; "הטעה את רשם ההוצאה לפועל ואת... הערכאות"; "הטעה ביודעין ובמכוון".</p>
+  <h3>הקביעה <span class="pill p-judge">★ דברי השופט עמית</span></h3>
+  <blockquote>"עיינתי בתמליל השיחה בין כונס הנכסים לחוקר הפרטי, <b>ולא התרשמתי כלל מ'אקדח מעשן'. נהפוך הוא</b>... תמהני מדוע סבורים המבקשים כי יש בתמליל זה משום ראיה... בדבר תרמית, מזימה, קנוניה."</blockquote>
+  <p>השופט ציין שהחייבים התעלמו מכך שדרור בהקלטה <b>מנסה למקסם</b> את המחיר, ושהחייב עצמו "<b>ביצע מעשי ונדליזם בנכס... הרס את יחידות הדיור</b>". <span class="pill p-rej">נדחה על הסף</span>; 2,000 ₪ הוצאות לאוצר. (בפשרת 6885/14 הכונס הצהיר "לא פעל בכל מרמה".)</p>
+  <div class="tag-row"><span class="pill p-rej">קנוניה — נדחתה</span><span class="pill p-rej">רמאות — נדחתה</span><span class="pill p-rej">מכירה בחסר — לא הוכחה</span></div>
+</section>
+
+<!-- 13 HENIG fees -->
+<section class="slide">
+  <h2><span class="badge-star">★</span> הניג — רע"צ (ת"א) 58936‑09‑16 (שכר טרחה) <span class="pill p-id-hi">זיהוי גבוה</span></h2>
+  <div class="meta"><span class="pill p-case">רע"צ 58936‑09‑16 (סובל)</span><span class="pill p-date">3.11.2016</span><span class="pill p-case">תיק הוצל"פ 511416‑12‑14</span></div>
+  <p class="sub"><b>נושא:</b> בקשת חייב להפחית שכר כונס. | <b>צדדים:</b> אריק הניג (חייב) נ' עו"ד יוסי דרור (כונס).</p>
+  <h3>הטענה <span class="pill p-alleg">טענה (הניג)</span></h3>
+  <p>השכר שנפסק — <b>610,088 ₪ (כולל מע"מ)</b> — מופרז; יש להפחיתו (נימוק: מצב בריאותי).</p>
+  <h3>הקביעה <span class="pill p-judge">★ הערת שופט</span></h3>
+  <p><span class="pill p-rej">נדחה</span> — השכר תואם את התקנות; שיקול הדעת להפחתה "מצומצם רק למקרים חריגים".</p>
+  <blockquote>"<b>לכאורה שכרו של המשיב איננו נמוך ואולם גם התמורה</b> שהושגה במכירת הנכס <b>איננה קטנה</b>."</blockquote>
+  <p>ניואנס: למרות הדחייה — <b>נמנע מלפסוק הוצאות לטובת דרור</b> בשל גובה השכר. רמז עדין שהשכר גבוה, אך חוקי.</p>
+  <div class="tag-row"><span class="pill p-judge">★ "שכרו... איננו נמוך"</span><span class="pill p-rej">הפחתה — נדחתה</span></div>
+</section>
+
+<!-- 14 SADE -->
+<section class="slide">
+  <h2><span class="badge-star">★</span> שדה — רע"צ (חיפה) 35333‑06‑16 <span class="pill p-id-hi">זיהוי גבוה</span></h2>
+  <div class="meta"><span class="pill p-case">רע"צ 35333‑06‑16 (קלמפנר‑נבון)</span><span class="pill p-date">23.6.2016</span><span class="pill p-case">+ רע"א 2145‑07‑16 · בש"א 7834/16</span></div>
+  <p class="sub"><b>נושא:</b> תקיפת אישור מכר בכינוס. מצפה הילה, גוש 18743; מכר 1,200,000 ₪. | <b>צדדים:</b> שמואל שדה (חייב) נ' עו"ד יוסי דרור (כונס) + בנק לאומי מערך המשכנתאות + דורוטי שדה.</p>
+  <h3>הטענות <span class="pill p-alleg">טענה (שדה)</span></h3>
+  <blockquote>"כונס הנכסים <b>לא נקט בכל צעד</b>... אלא <b>ישב באפס מעשה ואף לא טרח לפרסם</b> את הנכס."</blockquote>
+  <blockquote>התנהלות הכונס "<b>הטעתה את רשם ההוצאה לפועל</b>" ו"<b>מידע כוזב שנמסר</b>"; התעלמות מהשבחה (תב"ע); ריביות חריגות.</blockquote>
+  <p class="small">שדה הבהיר: <b>אינו מתנגד למכר עצמו</b> — רק להתנהלות הכונס והשמאי.</p>
+  <h3>הקביעה</h3>
+  <p>הרשם דחה הכל לגופו (8.9.16). ואז — <span class="pill p-settle">הסתיים בפשרה ונמחק</span> (9.11.2016). שתי בקשות הוצאות של דרור <b>נדחו</b> (פרוצדורלי). <b>אין קביעה נגד דרור.</b></p>
+  <div class="tag-row"><span class="pill p-alleg">פסיביות / מכירה בחסר</span><span class="pill p-alleg">הסתרה (מידע כוזב)</span><span class="pill p-settle">פשרה</span></div>
+</section>
+
+<!-- 15 ALIMELECH (60% + sittat) -->
+<section class="slide">
+  <h2><span class="badge-star">★</span> אלימלך — מכירה ב‑60% וניסיון "עדות שיטה" <span class="pill p-id-hi">זיהוי גבוה</span></h2>
+  <div class="meta"><span class="pill p-case">ת"א (ראשל"צ) 41505‑07‑18 (אבי סתיו)</span><span class="pill p-date">2018‑2022</span></div>
+  <p class="sub"><b>צדדים:</b> דליה חוה אלימלך נ' בנק לאומי + בנק לאומי למשכנתאות + יוסי דרור (כונס) + אסף לוי (קונה) + עו"ד מריון בנדורי. דירה בראשל"צ; מענק מותנה 142,500 ₪; מכר 25.6.2013 ב‑750,000 ₪.</p>
+  <h3>הטענות <span class="pill p-alleg">טענה (אלימלך)</span></h3>
+  <ul>
+    <li>"מצג מטעה" / "הטעיה ומרמה" לגבי "גרירת" המענק.</li>
+    <li>★ הקלטה שלפיה דרור "<b>מכר את הדירה... ב‑60 אחוז ממחירה הנכון</b>" — וניסיון לבסס "<b>דפוס פעולה</b>" / <b>עדות שיטה</b>.</li>
+  </ul>
+  <h3>הקביעה <span class="pill p-judge">★ השופט סתיו</span></h3>
+  <blockquote>"הראיה <b>כלל אינה רלוונטית</b> להליך... אין מדובר בטענות למעשים דומים באופן העשוי לבסס '<b>עדות שיטה</b>'... <b>זיקה כה קלושה</b>."</blockquote>
+  <p><span class="pill p-rej">ההקלטה נפסלה</span> — מעולם לא נבחנה לגופה. התביעה נדחתה; הערעור נמחק (אי‑הפקדת ערובה); התביעה המקבילה נמחקה מחוסר מעש.</p>
+  <div class="warn"><p>⚠️ טענת ה‑60% היא <b>טענה שנפסלה כראיה ולא הוכרעה</b> — לא להציג כעובדה. הניסיון להוכיח "שיטה" נדחה משפטית.</p></div>
+</section>
+
+<!-- 16 DASHTI + BEN TOVIM -->
+<section class="slide">
+  <h2>דשתי (רע"א 37/19) ובן טובים (רע"א 1708/19) <span class="pill p-id-hi">זיהוי גבוה</span></h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3>דשתי — רע"א 37/19 (2019)</h3>
+      <p class="small">פש"ר 36864‑04‑18; דירה בחולון. דרור כונס לבנק לאומי למשכנתאות.</p>
+      <p><span class="pill p-alleg">הקשר</span> דשתי טענה שחתימותיה על המשכנתא <b>זויפו</b> — וזכתה (השעבוד בטל; דיירת מוגנת). שמאות: ריק 1,570,000 ₪ / תפוס 800,000 ₪. דרור ביקש למכור חצי‑חלק; המנהל המיוחד ביקש לעצור (מכירה בחסר).</p>
+      <p><span class="pill p-block">עוכב זמנית (אלרון); הכרעה סופית חסומה</span>. <b>הזיוף — נגד הבנק, לא דרור.</b></p>
+    </div>
+    <div class="card">
+      <h3>בן טובים — רע"א 1708/19 (2019)</h3>
+      <p class="small">פש"ר 42643‑09‑16; דירה קדושי קהיר 19/54 חולון. דרור כונס לבנק לאומי למשכנתאות.</p>
+      <p><span class="pill p-block">הטקסט המלא חסום לחלוטין</span> (אתר העליון חסום; אין במאגרים חופשיים).</p>
+      <p><b>לא ניתן לאמת</b> את הטענות או התוצאה. סומן כפער.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3>ע"א 6050/18 (אברהמי) — להבהרה <span class="pill p-id-hi">זיהוי גבוה, אך שולי</span></h3>
+    <p>בפש"ר של חיים אברהמי, דרור + בנק לאומי הם צדדים <b>"פורמליים"</b> (9‑10). המחלוקת בין החייב לכונסים של בנק דיסקונט (שפירא/ליפקר‑דגן). <b>אין טענה נגד דרור כאן.</b></p>
+  </div>
+</section>
+
+<!-- 17 RAFAEL COHEN (full) -->
+<section class="slide">
+  <h2><span class="badge-star">★</span> רפאל כהן — ת"א (ת"א) 30628‑08‑18 <span class="pill p-id-hi">זיהוי ודאי</span></h2>
+  <div class="meta"><span class="pill p-case">ת"א 30628‑08‑18 (פינצ'וק‑אלט)</span><span class="pill p-date">24.3.2024</span><span class="pill p-case">תביעה 331,603 ₪</span></div>
+  <p class="sub"><b>נושא:</b> השבת כספים שנמסרו בקשר לכינוס. | <b>צדדים:</b> רפאל כהן (רוכש/משקיע) נ' עו"ד יוסף דרור (כונס) + בנק לאומי למשכנתאות. כינוס על זכויות הזוג אלזם, כרמי יוסף; מכר 4,750,000 ₪.</p>
+  <h3>הטענות <span class="pill p-alleg">טענה (כהן)</span></h3>
+  <blockquote>"בהסתמך על... <b>הבטחת הכונס</b>... שילם... 200,000 ₪... <b>הבטחת הכונס הופרה</b>... <b>בניגוד להבטחתו לא דיווח לרשם ההוצל"פ</b> כי הסך... חלק מחוב המשכנתא... הסכום לא הוחזר."</blockquote>
+  <p>ועוד: "הכונס <b>התרשל</b> בכך שלא קיזז... פיצוי מוסכם 10%... לפחות 450,000 ₪".</p>
+  <h3>הקביעה <span class="pill p-judge">★ קביעה אקטיבית של שקיפות</span></h3>
+  <blockquote>"<b>הכונס פעל בשקיפות</b> בתיק ההוצל"פ קיבל את אישור רשם ההוצל"פ ופעל בהתאם להחלטות... <b>אין בהן ממש</b>."</blockquote>
+  <p><span class="pill p-rej">התביעה נדחתה במלואה</span>. כהן חויב ב‑35,000 ₪ הוצאות <b>לכל נתבע</b> (70,000 ₪), בהתחשב ב"טיב טענותיו".</p>
+  <p class="small">משמעותי לתזת "הסתרה": כאן בית המשפט <b>קבע אקטיבית</b> שדרור פעל בשקיפות — היפך הטענה.</p>
+</section>
+
+<!-- 18 RIF (paid back) -->
+<section class="slide">
+  <h2><span class="badge-star">★</span> ריף — חיוב בהשבת 70,000 ₪ <span class="pill p-id-hi">זיהוי ודאי</span></h2>
+  <div class="meta"><span class="pill p-case">ת"א 64400‑01‑22 → ע"א (מרכז) 31216‑06‑22</span><span class="pill p-date">28.12.2022</span><span class="pill p-case">תביעה 669,752 ₪</span></div>
+  <p class="sub"><b>נושא:</b> נזקים בבית שנמכר בכינוס (גירושים). מוטי קנה חצי גרושתו ב‑6.2 מ' ₪. | <b>צדדים:</b> מוטי ריף נ' עו"ד דרור יוסי (כונס) + זוהרה ריף.</p>
+  <h3>הטענה <span class="pill p-alleg">טענה (מוטי ריף)</span></h3>
+  <blockquote>"<b>חרף התחייבות הכונס למסור את הבית רק עם בלאי סביר</b>, מצא הוא את הבית עם נזקים הכוללים <b>הזנחה מכוונת ואף השחתה</b>"; הכונס "אחראי לתחזוקת הבית בכל תקופת הכינוס".</blockquote>
+  <h3>הקביעה <span class="pill p-paid">★ כסף הוחזר</span></h3>
+  <p>פס"ד קמא (קרלינסקי) בוטל <b>בהסכמה</b>; לפי <b>סעיף 79א — ללא הנמקה</b> — נקבע ש"<b>עו"ד דרור ישיב למשיבה [זוהרה] 70,000 ₪</b>".</p>
+  <div class="warn"><p>⚠️ ניואנס קריטי: 79א פירושו <b>פשרה ללא הנמקה וללא קביעת אשם</b>. ההשחתה המכוונת יוחסה ל<b>גרושה</b>, לא לדרור. ובכל זאת — זה אחד המקרים הבודדים שבהם <b>שולם כסף בקשר אליו</b>.</p></div>
+  <div class="tag-row"><span class="pill p-alleg">סעיף שניסח ("בלאי סביר")</span><span class="pill p-alleg">רשלנות/תחזוקה</span><span class="pill p-paid">79א: 70,000 ₪</span></div>
+</section>
+
+<!-- 19 ADDITIONAL CASES TABLE -->
+<section class="slide">
+  <h2>תיקים נוספים שנחשפו</h2>
+  <table>
+    <tr><th>תיק</th><th>תאריך</th><th>תפקיד / נושא</th><th>טענה / מצב</th></tr>
+    <tr><td>שמעיה — רע"צ (פ"ת) 12657‑12‑17</td><td>2018</td><td>כונס; בנק לאומי למשכנתאות</td><td>מחלוקת על שכ"ט כונס <span class="pill p-rej">נדחתה</span></td></tr>
+    <tr><td>עטיה — רע"א 2492/05 (עליון)</td><td>2005</td><td>כונס; בנק לאומי למשכנתאות</td><td>עיכוב פינוי <span class="pill p-rej">נדחה</span></td></tr>
+    <tr><td>דוידאשוילי — ת"א (ת"א) 1450/01</td><td>2007</td><td>כונס לבנק</td><td>ביטול משכנתא; דייר מוגן <span class="pill p-block">חסום</span></td></tr>
+    <tr><td>זוהר אשד — רע"צ (פ"ת) 5056‑02‑12</td><td>2012</td><td>כונס; בנק לאומי למשכנתאות</td><td>התנגדות לאישור מכר / פגמי הליך <span class="pill p-block">חסום</span></td></tr>
+    <tr><td>גליקשטיין — עש"א (פ"ת) 28578‑05‑19</td><td>2019</td><td>כונס; בנק לאומי למשכנתאות</td><td>תקיפת מימוש <span class="pill p-block">מהות חסומה</span> (ר' "הבית בידנו")</td></tr>
+    <tr><td>פלוני — ת"א (מרכז) 6143‑10‑21</td><td>2023</td><td>נזיקין נגד הכונס</td><td>"התנהלות לא תקינה"; נזק נפשי נטען; תביעה נגד הבנק <span class="pill p-rej">נדחתה</span></td></tr>
+    <tr><td>נוף — ת"א (מרכז) 9071‑09‑09</td><td>2010</td><td>כונס מוכר בית; בנק לאומי</td><td>רקע <span class="pill p-block">—</span></td></tr>
+    <tr><td>בקמן (חסוי) — ה"פ (ת"א) 1215‑07</td><td>2010</td><td>כונס; בנק לאומי</td><td>דחיית מועד פינוי</td></tr>
+    <tr><td>גנון — בר"ע (ב"ש) 545/03</td><td>2004</td><td>כונס; <b>בנק דיסקונט</b> למשכנתאות</td><td>סעיף 38 / חלוקת תמורה <span class="pill p-id-mid">זיהוי בינוני</span></td></tr>
+  </table>
+  <p class="small">מתוך מיפוי של ~58 הליכים מובחנים (109 מזהי מסמכים). אשכולות עיקריים: פלח (≈10), שדה (4), ריף (2), מזרחי/37‑19.</p>
+</section>
+
+<!-- 20 PERIPHERAL -->
+<section class="slide">
+  <h2>תיקי רקע / שוליים (דרור לא במוקד הביקורת)</h2>
+  <div class="grid g2">
+    <div class="card"><h3>בת ים / אלקבס — ה"פ 15301‑05‑20</h3><p class="small">דרור כונס+מנהל עיזבון. טענה: ביטוח חיים פרע את החוב — <b>נגד קיום החוב, לא נגד דרור</b>. עיכובים נדחו.</p></div>
+    <div class="card"><h3>אילת / שועה — ת"א 28178‑04‑13 ועוד</h3><p class="small">דרור כב"כ <b>עיריית אילת</b> (לא ככונס). פרוצדורלי; אין טענות התנהלות נגישות.</p></div>
+    <div class="card"><h3>בן יעקב — ת"א (חיפה) 38513‑09‑16</h3><p class="small">דרור+בנק <b>תובעים</b>. רק החלטות ניהול; ההגנות/תביעות שכנגד <b>לא נגישות</b>.</p></div>
+    <div class="card"><h3>סמרדין — ת"א (טבריה) 9355‑11‑17</h3><p class="small">דרור+בנק תובעים (אכיפת מימוש). אין טענות נגישות נגדו.</p></div>
+    <div class="card"><h3>רבקה כהן — ת"א 49854‑12‑14</h3><p class="small">טענת "תצהיר כוזב" מופנית ל<b>פקידת הבנק</b> (היא התובעת), לא לדרור.</p></div>
+    <div class="card"><h3>קנכט / נפ‑גל / לוזון</h3><p class="small">דרור כב"כ הבנק או רקע עובדתי בלבד; ללא ביקורת.</p></div>
+  </div>
+</section>
+
+<!-- 21 THEME fees -->
+<section class="slide">
+  <h2>אשכול נושאי: שכר טרחה ("בכל מחיר"?)</h2>
+  <div class="grid g2">
+    <div class="card h">
+      <h3>מה נטען</h3>
+      <ul>
+        <li>הניג: 610,088 ₪ מופרז → <span class="pill p-rej">נדחה</span></li>
+        <li>שמעיה (12657‑12‑17): מחלוקת שכ"ט → <span class="pill p-rej">נדחתה</span></li>
+        <li>בטיג'/בטיט (503/04): שכר מול חוסר פעילות → ★ הוחזר לדיון</li>
+        <li>קחטן (22981‑11‑14): דרור מערער (ערבון פרוצדורלי)</li>
+      </ul>
+    </div>
+    <div class="card h">
+      <h3>בסיס ההוגנות — התעריף הרגולטורי</h3>
+      <p class="small">תקנות ההוצל"פ (שכר עו"ד וכונסים) תשס"ב‑2002:</p>
+      <ul class="small">
+        <li>תעריף קשיח: <b>6%–8%</b> ממחיר המכירה.</li>
+        <li>השכר מוטל על <b>החייב</b> כברירת מחדל ("אלא במקרים חריגים").</li>
+        <li>שיקול הדעת להפחתה — מוגבל ל"מקרים חריגים".</li>
+      </ul>
+    </div>
+  </div>
+  <div class="ok" style="margin-top:10px">
+    <p><b>מסקנה הוגנת:</b> השכר הגבוה (למשל 610,088 ₪) <b>עוקב אחר התעריף החוקי</b> על תמורה גדולה. <b>לא נמצאה שום קביעה</b> של גביית‑יתר, כפל‑שכר או "שכר מאמץ". מסגרת ה"בכל מחיר" אינה מבוססת בפסיקה — רק ביקורת אחת על <b>חריצות</b> (בטיט).</p>
+  </div>
+</section>
+
+<!-- 22 THEME undervalue/passivity -->
+<section class="slide">
+  <h2>אשכול נושאי: מכירה בחסר ופסיביות</h2>
+  <table>
+    <tr><th>תיק</th><th>הטענה <span class="pill p-alleg">טענה</span></th><th>גורל</th></tr>
+    <tr><td>אלימלך</td><td>מכר ב‑"60% ממחירה הנכון" (הקלטה)</td><td><span class="pill p-rej">ההקלטה נפסלה; לא הוכרע</span></td></tr>
+    <tr><td>שדה</td><td>"ישב באפס מעשה ואף לא טרח לפרסם"</td><td><span class="pill p-settle">פשרה</span> (הרשם דחה לגופו)</td></tr>
+    <tr><td>בטיט ★</td><td>"לא עשה כל פעולה לקידום המכירה"</td><td><span class="pill p-judge">★ ביקורת; הוחזר לדיון</span></td></tr>
+    <tr><td>פלח</td><td>הקונה מתווך; השווי 6 מ' ₪ (לא 3.4)</td><td><span class="pill p-rej">נדחה — "נהפוך הוא"</span></td></tr>
+    <tr><td>דשתי</td><td>מכירת חצי‑חלק בשווי תפוס נמוך</td><td><span class="pill p-block">הכרעה חסומה</span></td></tr>
+    <tr><td>בונוביל</td><td>"תמורה פחותה במידה ניכרת משוויו"</td><td><span class="pill p-rej">לא הוכרע</span> <span class="pill p-id-lo">זיהוי?</span></td></tr>
+  </table>
+  <div class="card" style="margin-top:8px">
+    <p><b>הדפוס:</b> "פסיביות + מכירה בחסר" היא ההאשמה <b>החוזרת ביותר</b> מצד חייבים שונים — אך <b>בכל מקרה שהוכרע היא נדחתה/נפסלה</b>. הביקורת השיפוטית היחידה על פסיביות: בטיט (2005, זיהוי בינוני‑גבוה).</p>
+  </div>
+</section>
+
+<!-- 23 THEME concealment -->
+<section class="slide">
+  <h2>אשכול נושאי: הסתרה / קנוניה / שקיפות</h2>
+  <table>
+    <tr><th>תיק</th><th>הטענה <span class="pill p-alleg">טענה</span></th><th>גורל</th></tr>
+    <tr><td>צרפתי</td><td>"מו"מ נסתר" + קנוניה במכר</td><td><span class="pill p-rej">נדחה (סמכות/איחור)</span></td></tr>
+    <tr><td>פלח</td><td>"תרמית, מזימה, קנוניה"; הטעיית הרשם</td><td><span class="pill p-rej">"בעלמא"; "נהפוך הוא"</span></td></tr>
+    <tr><td>שדה</td><td>"מידע כוזב שנמסר לרשם"</td><td><span class="pill p-settle">פשרה</span> (נדחה לגופו)</td></tr>
+    <tr><td>רפאל כהן</td><td>"לא דיווח לרשם" על ה‑200,000 ₪</td><td><span class="pill p-rej">נדחה — "פעל בשקיפות"</span></td></tr>
+    <tr><td>בונוביל</td><td>"התעלמות מטענות בעלות"</td><td><span class="pill p-rej">לא הוכרע</span></td></tr>
+  </table>
+  <div class="ok" style="margin-top:8px">
+    <p><b>הממצא החזק ביותר נגד התזה:</b> בתיק רפאל כהן (2024) בית המשפט לא רק דחה את טענת אי‑הדיווח — אלא <b>קבע אקטיבית</b> ש"הכונס פעל בשקיפות... ופעל בהתאם להחלטות רשם ההוצל"פ". זו הקביעה הישירה ביותר בנושא, והיא לטובת דרור.</p>
+  </div>
+</section>
+
+<!-- 24 THEME clauses -->
+<section class="slide">
+  <h2>אשכול נושאי: סעיפים שהוא ניסח (ערפול) <span class="badge-star">★ ציר שביקשת</span></h2>
+  <p class="sub">"בעיות בסעיפים שהוא כתב" — שני מקרים שבהם המחלוקת נסבה על נוסח שדרור עצמו ניסח:</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>ריף — סעיף "בלאי סביר"</h3>
+      <p>הכונס "התחייב בהסכם המכר למסור את הבית רק עם <b>בלאי סביר</b>" / "<b>במצבו בעת החתימה</b>". הרוכש: הבית נמסר עם "הזנחה מכוונת ואף השחתה".</p>
+      <p><span class="pill p-paid">79א: השיב 70,000 ₪</span> (ללא הנמקה).</p>
+    </div>
+    <div class="card">
+      <h3>רפאל כהן — מכתב "על ידך ככונס"</h3>
+      <p>המחלוקת נסבה על נוסח מכתב; דרור העיד שנפלה "<b>טעות סופר</b>". <b>בית המשפט קיבל את פרשנותו</b>: "פרשנותו נותנת למכתב הסבר הגיוני".</p>
+      <p><span class="pill p-rej">נדחה לטובת דרור</span>.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <h3>מודעות "הזמנה להציע הצעות" (נוסח סטנדרטי שהוא מפרסם)</h3>
+    <p class="small">חתומות "עו"ד יוסי דרור – כונס נכסים"; כוללות "המכירה כפופה לאישור ראש ההוצאה לפועל", פיקדון 10%, ומכר "במצבו (AS IS)". <b>הערכה הוגנת:</b> סעיפי "AS IS" והיעדר‑מצג הם <b>נוסח מקובל בענף הכינוס</b> — ביקורת אפשרית (ערפול/חד‑צדדיות) קיימת ברמת הטענה, אך אינה חריגה לדרור. (ניתוח סעיפים מעמיק לא הושלם — ניתן להרחיב.)</p>
+  </div>
+</section>
+
+<!-- 25 advocacy campaign -->
+<section class="slide">
+  <h2>קמפיין "הבית בידנו" — האשמות הסברה <span class="pill p-id-mid">לא מאומת משפטית</span></h2>
+  <div class="warn">
+    <p><b>מהו:</b> אתר/קמפיין זכויות‑חייבים ("הבית בידנו / מגן רפאל") המכנה את <b>פלח</b> ו<b>גליקשטיין</b> "קורבנות" של עו"ד דרור.</p>
+    <h3 style="color:#fff">ציטוט (חומר הסברה — לא קביעה):</h3>
+    <blockquote>"בנק לאומי <b>מתעלל</b> בחייבים המסכנים ועושה <b>יד אחת</b> עם... כונס הנכסים יוסי דרור וביחד הם <b>גוזלים את נכסיהם של הקורבנות במרמה ומוכרים אותם למקורבים להם בעלות נמוכה</b>."</blockquote>
+    <blockquote>"צפו ב<b>זיופי משכנתאות</b> של עו"ד וכונס הנכסים יוסי דרור..."; "<b>מכרתי את הדירה ב‑60% מהמחיר שלה</b>" (מיוחס לדרור, כביכול בזמן שחייב היה מאושפז).</blockquote>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <p><b>מעמד ראייתי:</b> אלה ההאשמות החמורות ביותר שאותרו — אך הן <b>חד‑צדדיות, מאתר מתעדים/נפגעים, ולא אומצו ע"י שום בית משפט</b>. חלקן חופפות לטענות שכבר נדחו בערכאות (פלח — "נהפוך הוא"; ה‑60% — נפסל באלימלך). יש להתייחס אליהן כ<b>טענות הסברה בלתי‑מוכחות</b>, לא כעובדות.</p>
+  </div>
+</section>
+
+<!-- 26 SHITA analysis -->
+<section class="slide">
+  <h2>שאלת ה"שיטה" — תשובה הגונה</h2>
+  <div class="grid g2">
+    <div class="card h">
+      <h3>מה כן חוזר על עצמו</h3>
+      <p><b>דפוס האשמה</b> זהה מצד חייבים שונים לאורך 20+ שנה:</p>
+      <ul>
+        <li>פסיביות + מכירה בחסר (שדה, בטיט, אלימלך, פלח, בונוביל).</li>
+        <li>הסתרה / הטעיית הרשם (צרפתי, פלח, שדה, כהן).</li>
+        <li>ערפול בניסוח סעיפים (ריף, כהן).</li>
+        <li>קמפיין הסברה המכנה אותו "כונס של קורבנות".</li>
+      </ul>
+    </div>
+    <div class="card h">
+      <h3>מה לא הוכח</h3>
+      <ul>
+        <li>בכל מקרה שהוכרע — הטענה <b>נדחתה</b> ("נהפוך הוא", "פעל בשקיפות"), <b>הסתיימה בפשרה</b>, או <b>נפסלה</b>.</li>
+        <li>ניסיון מפורש לבסס <b>"עדות שיטה"</b> (אלימלך) — <b>נדחה</b> כ"זיקה כה קלושה".</li>
+        <li><b>אין קביעה שיפוטית</b> של מרמה/קנוניה/מכירה בחסר נגדו.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="warn" style="margin-top:10px">
+    <p><b>שורה תחתונה על "שיטה":</b> קיים <b>דפוס האשמות חוזר</b> — אך <b>אין דפוס שהוכח משפטית</b>. ההבחנה הזו היא בדיוק מה שהופך את העבודה לאמינה: היא מזהה את החזרתיות, בלי לטעון לעובדה שלא נקבעה.</p>
+  </div>
+</section>
+
+<!-- 27 judicial remarks highlight -->
+<section class="slide">
+  <h2><span class="badge-star">★</span> ריכוז: הערות שופטים / רמזים (מה שביקשת)</h2>
+  <table>
+    <tr><th>תיק</th><th>השופט</th><th>הציטוט / הרמז</th><th>מהות</th></tr>
+    <tr><td>בטיט 503/04</td><td>הנדל</td><td>"לא הכחיש כי <b>לא עשה כל פעולה</b>"; שיקולי "חוסר פעילות" בעלי משקל; שכר "אם בכלל"</td><td><span class="pill p-judge">ביקורת ממשית (חריצות+שכר)</span></td></tr>
+    <tr><td>הניג 58936‑09‑16</td><td>סובל</td><td>"שכרו... <b>איננו נמוך</b>"; נמנע מהוצאות לטובת דרור</td><td><span class="pill p-judge">רמז עדין (שכר גבוה אך חוקי)</span></td></tr>
+    <tr><td>שדה / ריף</td><td>לוי‑יטח / מאירוביץ</td><td>דחיית בקשות הוצאות של דרור; ספק בעילה</td><td><span class="pill p-judge">פרוצדורלי, לא לגופו</span></td></tr>
+    <tr><td>ריף 31216‑06‑22</td><td>נד"ב ואח'</td><td>חיוב להשיב 70,000 ₪ (79א, ללא הנמקה)</td><td><span class="pill p-paid">תוצאה כספית, לא קביעת אשם</span></td></tr>
+  </table>
+  <div class="ok" style="margin-top:10px">
+    <p><b>היפוכו של דבר — הערות שזיכו אותו:</b> עמית (פלח): "נהפוך הוא"; פינצ'וק‑אלט (כהן): "הכונס <b>פעל בשקיפות</b>... אין בהן ממש". אלה הקביעות הישירות ביותר על התנהלותו — והן <b>לטובתו</b>.</p>
+  </div>
+</section>
+
+<!-- 28 negative findings -->
+<section class="slide">
+  <h2>ממצאים שליליים (חשובים לאיזון ולאמינות)</h2>
+  <div class="grid g2">
+    <div class="card"><h3>משמעת</h3><p><span class="pill p-rej">לא נמצא</span> שום הליך משמעתי/השעיה בלשכת עוה"ד (בחיפוש פתוח). הליך שעלה (01‑16667) שייך לעו"ד אחר.</p></div>
+    <div class="card"><h3>עיתונות</h3><p><span class="pill p-rej">לא נמצא</span> כיסוי/חקירה תקשורתית המזכירים אותו אישית. כתבות על "כונסים אגרסיביים" — לא נוקבות בשמו.</p></div>
+    <div class="card"><h3>תלונות צרכנים</h3><p><span class="pill p-rej">לא נמצא</span> תלונות/ביקורות בפורומים באינטרנט הגלוי. בדף דפי‑זהב — "אין עדיין חוות דעת".</p></div>
+    <div class="card"><h3>התעמרות / חוסר רגישות</h3><p><span class="pill p-rej">לא נמצא</span> טענה או קביעה של התעמרות, פינוי אכזרי, או אי‑סידור‑חלוף (סריקת 597 מזהים).</p></div>
+  </div>
+  <p class="small" style="margin-top:8px">סייג: מאגר המשמעת הפנימי של הלשכה, קבוצות פייסבוק סגורות וביקורות גוגל אינם ניתנים לאינדוקס — ההיעדר הוא "באינטרנט הגלוי", לא ערובה מוחלטת. (קמפיין "הבית בידנו" הוא היוצא מן הכלל — אך הסברה, לא ממצא.)</p>
+</section>
+
+<!-- 29 comparative -->
+<section class="slide">
+  <h2>השוואה ארצית — האם "מהגדולים"?</h2>
+  <div class="grid g2">
+    <div class="card h">
+      <h3>הבעיה המבנית</h3>
+      <p><b>אין בישראל שום מאגר ציבורי</b> שמדרג עורכי דין לפי מספר מינויי כינוס. כל טענת "הכי הרבה" — אינה ניתנת לאימות פומבי, לגבי כל אחד.</p>
+    </div>
+    <div class="card h">
+      <h3>איפה דרור</h3>
+      <ul>
+        <li>כונס פאנל בנקאי <b>פעיל ומבוסס</b> (לאומי‑משכנתאות) — 25+ שנים.</li>
+        <li><b>אינו מופיע באף דירוג עצמאי</b> (Dun's 100 / BDI) או כתבה.</li>
+        <li>משרד שילנסקי (שאליו השתייך) — מהמובילים בגבייה.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <p><b>הערכה (איכותנית):</b> סביר שצבר מספר מינויים גבוה (ערוץ עתיר‑נפח של מימושי משכנתא), אך הראיות הפומביות <b>אינן מציבות אותו בצמרת הארצית הנקובה‑בשם</b>. "מובילות" מופיעה רק בחומרי השיווק של משרדיו.</p>
+  </div>
+</section>
+
+<!-- 30 limitations -->
+<section class="slide">
+  <h2>מגבלות המחקר</h2>
+  <ul>
+    <li><b>מאגרים חסומים/בתשלום:</b> נבו, תקדין מלא, נט‑המשפט, אתר העליון (חסימת WAF), רשומות, מאגר חדל"פ, israelbar (מספר רישיון).</li>
+    <li><b>עמוד ראשון בלבד:</b> ב‑API החופשי רבים מהפסקים נחתכים — חלק מההכרעות הסופיות שוחזרו מציטוטים בפסקים מאוחרים, וחלק נותרו <span class="pill p-block">לא מאומתים מילולית</span>.</li>
+    <li><b>פערים מהותיים שנותרו:</b> בן טובים (1708/19) — טקסט מלא חסום; דשתי — הכרעה סופית חסומה; פלח 6885/14 — הנמקה מלאה חסומה; קרלינסקי (ריף) — לא מאונדקס.</li>
+    <li><b>ספק זיהוי:</b> בונוביל (בנק הבינלאומי) ותיקי אילת (ב"כ עירייה) — ייתכן דרור אחר.</li>
+    <li><b>צווי מינוי סרוקים</b> באתרו — תמונות ללא טקסט; מספרי תיקי הוצל"פ דורשים OCR.</li>
+  </ul>
+  <div class="card" style="margin-top:8px"><p class="small"><b>להשלמה:</b> משיכה בתשלום מנבו/תקדין של ההכרעות המלאות (במיוחד 6885/14, 1708/19, 6143‑10‑21, 67667‑01‑22); פנייה ללשכה למספר רישיון; OCR לצווי המינוי.</p></div>
+</section>
+
+<!-- 31 bottom line -->
+<section class="slide">
+  <h2>שורה תחתונה — מאזנת</h2>
+  <div class="grid g3" style="margin:.4em 0">
+    <div class="card" style="text-align:center"><div class="kpi">~40</div><div class="kpi-l">הליכים שנבדקו</div></div>
+    <div class="card" style="text-align:center"><div class="kpi" style="color:var(--red)">0</div><div class="kpi-l">קביעות שיפוטיות של מרמה/חוסר תום לב נגדו</div></div>
+    <div class="card" style="text-align:center"><div class="kpi" style="color:var(--gold)">1</div><div class="kpi-l">ביקורת שיפוטית ממשית (בטיט — פסיביות/שכר)</div></div>
+  </div>
+  <div class="ok">
+    <ul>
+      <li><b>טענות חמורות הועלו</b> — מרמה, קנוניה, מכירה בחסר, הסתרה, הפרת סעיפים שניסח — מצד חייבים/רוכשים/נושים שונים, וגם בקמפיין הסברה.</li>
+      <li><b>אך בכל פעם שבית משפט הכריע לגופו — הטענה נדחתה</b> (עמית: "נהפוך הוא"; פינצ'וק‑אלט: "פעל בשקיפות"), הסתיימה בפשרה (שדה), או נפסלה (אלימלך).</li>
+      <li><b>שני אירועים כספיים בלבד:</b> ריף (79א, 70,000 ₪, ללא קביעת אשם); ודחיות הוצאות נקודתיות.</li>
+      <li><b>הביקורת השיפוטית היחידה:</b> בטיט (2005) — חוסר פעילות ושכר; וכן רמז של סובל ש"השכר אינו נמוך".</li>
+      <li><b>אין</b> רישום משמעתי, כיסוי עיתונאי, או ממצא של התעמרות.</li>
+    </ul>
+  </div>
+  <p class="small">המסקנה ההגונה: קיים <b>דפוס האשמות חוזר</b> סביב פסיביות/מכירה בחסר/הסתרה — אך הוא <b>נותר ברמת טענה</b>; משפטית, התמונה הפומבית של דרור נקייה מקביעות אשם, למעט ביקורת חריצות אחת.</p>
+</section>
+
+<!-- 32 appendix sources -->
+<section class="slide">
+  <h2>נספח — מקורות עיקריים</h2>
+  <div class="two-col small">
+    <p class="nobreak"><b>פסיקה (תקדין/judgments/עליון):</b> ע"א 4162/04; בר"ע (ב"ש) 503/04, 545/03, 550/07; רע"א 2492/05, 5892/07, 8782/07; רע"א 130/12, 5774/12, 5947/12, 1743/14, 3710/14; ע"א 6885/14; בש"א 8686/14; רע"צ 5056‑02‑12, 22981‑11‑14, 12657‑12‑17, 35333‑06‑16, 58936‑09‑16; ה"פ 9723‑01‑13, 1215‑07, 15301‑05‑20; ת"א 49854‑12‑14, 30628‑08‑18, 41505‑07‑18, 64400‑01‑22, 38513‑09‑16, 9355‑11‑17, 9071‑09‑09, 6143‑10‑21, 53391‑11‑15, 1450/01; ע"א (מרכז) 31216‑06‑22, 59167‑12‑21; רע"א 37/19, 1708/19, 17644‑02‑22; עש"א 28578‑05‑19; ע"א 6050/18.</p>
+    <p class="nobreak"><b>זהות ורקע:</b> yossidror.co.il (אודות, מודעות כינוס); shilansky.co.il (עמוד צוות); מרשם החברות (data.gov.il) ח.פ 514804871; מרשם לשכת עוה"ד (odata.org.il); d.co.il (דפי זהב); Bidspirit.</p>
+    <p class="nobreak"><b>הסברה:</b> habait‑beyadenu.co.il ("הבית בידנו / מגן רפאל") — חומר חד‑צדדי, לא מאומת.</p>
+    <p class="nobreak"><b>מתודה:</b> API חופשי של תקדין‑לייט (עמוד ראשון); פרוקסי קריאה לעקיפת חסימות; חיפושי רשת בעברית. מאגרים בתשלום/חסומים סומנו לאורך המצגת.</p>
+    <p class="nobreak"><b>גיבוי טקסטואלי מלא:</b> ראו הקובץ <code>dror_research_data.md</code> המצורף.</p>
+  </div>
+  <div class="warn" style="margin-top:10px"><p class="small">⚖️ <b>הסתייגות:</b> מצגת זו מרכזת מידע מהליכים פומביים לצורך מחקר. היא מבחינה בין טענות (לא מוכחות) לקביעות שיפוטיות. אין בה כדי לקבוע אשם, וההאשמות שלא הוכרעו/נדחו אינן מהוות ממצא נגד עו"ד דרור. לשימוש משפטי — יש לאמת כל פריט במקור המלא.</p></div>
+</section>
+
+</div>
+
+<div class="foot">
+  <div class="nav">
+    <button onclick="go(-1)">◄ הקודם</button>
+    <button onclick="go(1)">הבא ►</button>
+  </div>
+  <div>עו"ד יוסי דרור — מחקר טענות ופסיקה • טענה ≠ קביעה</div>
+  <div><span id="cur">1</span> / <span id="tot">32</span></div>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0; const tot=slides.length;
+  document.getElementById('tot').textContent=tot;
+  function show(n){
+    i=Math.max(0,Math.min(tot-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    document.getElementById('cur').textContent=i+1;
+    document.getElementById('prog').style.width=((i+1)/tot*100)+'%';
+    slides[i].scrollTop=0;
+  }
+  function go(d){show(i+d);}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowLeft'||e.key==='PageDown'||e.key===' ')go(1);      // RTL: left = next
+    else if(e.key==='ArrowRight'||e.key==='PageUp')go(-1);
+    else if(e.key==='Home')show(0); else if(e.key==='End')show(tot-1);
+  });
+  show(0);
+</script>
+</body>
+</html>
